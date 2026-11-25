@@ -11,6 +11,10 @@ CLIENT
 ------
 ClientId (PK)
 Name
+
+EntitlementBalance
+NotificationCcEmail
+
 CreatedDate
 CreatedBy
 IsActive
@@ -21,6 +25,37 @@ PURPOSE:
 
 Represents a company purchasing and using the
 TPRM service.
+
+
+ENTITLEMENT:
+
+EntitlementBalance represents the number of additional
+Assessments the Client is entitled to initiate.
+
+When an Assessment is initiated:
+
+EntitlementBalance = EntitlementBalance - 1
+
+If:
+
+EntitlementBalance = 0
+
+Assessment initiation is blocked.
+
+Once consumed, an entitlement is not returned even if
+the Assessment is:
+
+Cancelled
+Abandoned
+Never distributed
+Never completed
+
+
+NOTIFICATION CC:
+
+NotificationCcEmail is an optional Client-specific
+email address that is CC'd on applicable notifications
+for the MVP.
 
 
 ========================================
@@ -480,13 +515,20 @@ ClientVendorId (FK -> ClientVendor)
 TemplateId (FK -> QuestionnaireTemplate)
 TierIdSnapshot (FK -> VendorTier)
 ScoringConfigIdSnapshot (FK -> ScoringConfig, nullable)
+
 Status
+
 InitiatedBy
 InitiatedDate
 CreatedDate
+
 DistributedBy
 DistributedDate
+
 CompletedDate
+
+ClientAcknowledgedReportId
+(FK -> Report, nullable)
 
 ClientAcknowledgedBy
 (FK -> ApplicationUser, nullable)
@@ -561,15 +603,24 @@ CLIENT REVIEW:
 
 Client Review is read-only.
 
-The Client reviews the score, Findings, and
-Recommendations.
+The Client reviews the Report, including:
 
-The Client acknowledges the Assessment.
+Score
+Questions
+Responses
+Evidence references
+Reviews
+Findings
+Recommendations
+
+The Client acknowledges a specific Report version.
+
+ClientAcknowledgedReportId records which Report
+version was acknowledged.
 
 ClientAcknowledgedBy records who acknowledged it.
 
-ClientAcknowledgedDate records when acknowledgment
-occurred.
+ClientAcknowledgedDate records when it happened.
 
 
 CLOSURE:
@@ -581,7 +632,7 @@ After Closure:
 
 No new Responses.
 
-No new Evidence may be attached to Responses.
+No new Evidence attached to Responses.
 
 No new Reviews.
 
@@ -1346,11 +1397,8 @@ ResolvedByReviewId
 
 Title
 Description
-
 Recommendation
-
 Severity
-
 Status
 
 CreatedDate
@@ -1380,12 +1428,6 @@ When the current Response receives:
 Review.Status = Rejected
 
 the system automatically creates a new Finding.
-
-
-The Finding is associated with:
-
-- The AssessmentQuestion that failed
-- The Rejected Review that created the Finding
 
 
 NEW FINDING:
@@ -1426,42 +1468,23 @@ A Finding is never deleted merely because the Vendor
 later fixes the issue.
 
 
-Example:
-
-Response v1
+Rejected Response:
 
     ↓
 
-Review = Rejected
+Finding = Open
+
+
+Later Accepted Response:
 
     ↓
 
-Finding #1
+Finding = Resolved
 
-Status = Open
-
-
-Vendor submits Response v2.
-
-Response v2:
-
-    ↓
-
-Review = Accepted
-
-    ↓
-
-Finding #1
-
-Status = Resolved
-
-
-When resolved:
 
 ResolvedByReviewId points to the Accepted Review.
 
 ResolvedDate records when the Finding was resolved.
-
 
 The original Finding remains permanently for audit
 history.
@@ -1474,44 +1497,10 @@ REPEATED FINDINGS
 A Resolved Finding is never reopened.
 
 
-Example:
+If the same question later gets another Rejected
+Response:
 
-Response v1
-
-    ↓
-
-Rejected
-
-    ↓
-
-Finding #1 = Open
-
-
-Response v2
-
-    ↓
-
-Accepted
-
-    ↓
-
-Finding #1 = Resolved
-
-
-Response v3
-
-    ↓
-
-Rejected
-
-    ↓
-
-Finding #2 = Open
-
-
-Finding #1 remains Resolved.
-
-Finding #2 represents the new occurrence.
+A NEW Finding is created.
 
 
 ========================================
@@ -1519,34 +1508,7 @@ FINDINGS & RECOMMENDATIONS COMPLETION
 ========================================
 
 Every Open Finding must have a Recommendation before
-the Assessment may move from:
-
-Findings and Recommendations
-
-to:
-
-Client Review
-
-
-Example:
-
-Finding #1
-
-Status = Open
-
-Recommendation =
-"Require MFA for privileged accounts."
-
-READY
-
-
-Finding #2
-
-Status = Open
-
-Recommendation = NULL
-
-NOT READY
+the Assessment may move to Client Review.
 
 
 Resolved Findings do not block progression to
@@ -1557,7 +1519,7 @@ Client Review.
 FINDING FREEZE
 ========================================
 
-When the Assessment enters Client Review, all Findings
+When the Assessment enters Client Review, Findings
 become immutable.
 
 
@@ -1574,45 +1536,31 @@ Severity cannot change.
 Findings cannot be deleted.
 
 
-No separate IsLocked field is required.
-
-The rule is enforced based on Assessment.Status.
-
-
 ========================================
 CLIENT REVIEW
 ========================================
 
-Client Review is read-only for the MVP.
+Client Review is read-only for MVP.
 
 
 The Client reviews:
 
-- Assessment score
-- Findings
-- Recommendations
+Assessment score
+
+Questions
+
+Responses
+
+Reviews
+
+Evidence references
+
+Findings
+
+Recommendations
 
 
-The Client does not:
-
-- Edit Findings
-- Reject Findings
-- Approve individual Findings
-- Request Finding changes through a workflow
-
-
-The Client acknowledges the Assessment.
-
-
-Acknowledgment is stored on Assessment:
-
-ClientAcknowledgedBy
-
-ClientAcknowledgedDate
-
-
-After acknowledgment, the Assessment may move to
-Closure.
+The Client acknowledges a specific Report version.
 
 
 ========================================
@@ -1620,23 +1568,17 @@ RESOLVED FINDINGS
 ========================================
 
 Resolved Findings remain visible in the final
-Assessment history and eventual report.
+Assessment history and Report.
 
 
-The Client can therefore distinguish:
+The Client can distinguish:
 
-OPEN FINDINGS:
+Open Findings
 
-Risks that still exist.
-
-
-RESOLVED FINDINGS:
-
-Risks identified during the Assessment that were
-subsequently remediated.
+Resolved Findings
 
 
-Resolved Findings are not deleted or hidden.
+Resolved Findings are never deleted or hidden.
 
 
 ========================================
@@ -1647,27 +1589,479 @@ Once the Assessment reaches Closure, the entire
 Assessment becomes read-only.
 
 
-After Closure:
-
-No new Responses.
-
-No new Evidence attached to Responses.
-
-No new Reviews.
-
-No new Findings.
-
-No Finding changes.
-
-No score recalculations.
-
-No questionnaire scope changes.
-
-No Client acknowledgment changes.
-
-
 Historical records remain available for audit and
-reporting purposes.
+reporting.
+
+
+========================================
+REPORT
+========================================
+
+REPORT
+------
+ReportId (PK)
+
+AssessmentId
+(FK -> Assessment)
+
+AssessmentScoreId
+(FK -> AssessmentScore)
+
+Version
+
+GeneratedBy
+(FK -> ApplicationUser)
+
+GeneratedDate
+
+...
+
+
+PURPOSE:
+
+Represents a fixed snapshot of an Assessment prepared
+for Client Review.
+
+
+REPORT GENERATION:
+
+Before entering Client Review:
+
+Scoring must be complete.
+
+Findings must be complete.
+
+Every Open Finding must have a Recommendation.
+
+The system generates a fixed Report version.
+
+
+REPORT CONTENT:
+
+The Report contains a snapshot/reference of:
+
+Assessment details
+
+Client and Vendor
+
+Tier
+
+Exact AssessmentScore
+
+CategoryScores
+
+Every included AssessmentQuestion
+
+Current Response at generation time
+
+Review
+
+Exact Evidence records/versions
+
+Open Findings
+
+Resolved Findings
+
+Recommendations
+
+
+Excluded AssessmentQuestions do not need to appear
+in the Client-facing Report.
+
+
+========================================
+REPORT VERSIONING
+========================================
+
+Reports are versioned and append-only.
+
+
+Example:
+
+Assessment #100
+
+Report v1
+
+Report v2
+
+
+If another Report is generated:
+
+A new Report record is created.
+
+Previous Report versions remain preserved.
+
+
+Reports are never overwritten.
+
+
+Each Report references the exact AssessmentScore used
+for that Report.
+
+
+========================================
+REPORT EVIDENCE REFERENCES
+========================================
+
+Evidence files are NOT duplicated into the Report.
+
+
+Report content references the exact Evidence records
+used by the Response included in that Report.
+
+
+If newer Evidence is uploaded later:
+
+The historical Report continues to reference the
+older Evidence version used when it was generated.
+
+
+========================================
+REPORT FILE
+========================================
+
+REPORT_FILE
+-----------
+ReportFileId (PK)
+
+ReportId
+(FK -> Report)
+
+Format
+
+StorageLocation
+
+GeneratedDate
+
+...
+
+
+PURPOSE:
+
+Stores generated downloadable files for one Report
+version.
+
+
+MVP FORMATS:
+
+PDF
+
+CSV
+
+
+Example:
+
+Report v2
+
+    +-- PDF
+
+    +-- CSV
+
+
+The exact CSV structure is still TBD.
+
+
+========================================
+REPORT ACKNOWLEDGMENT
+========================================
+
+Client acknowledgment applies to a specific Report
+version.
+
+
+Assessment stores:
+
+ClientAcknowledgedReportId
+
+ClientAcknowledgedBy
+
+ClientAcknowledgedDate
+
+
+This allows the system to determine exactly which
+Report version the Client reviewed and acknowledged.
+
+
+========================================
+NOTIFICATION
+========================================
+
+NOTIFICATION
+------------
+NotificationId (PK)
+
+EventType
+
+ClientId
+(FK -> Client, nullable)
+
+AssessmentId
+(FK -> Assessment, nullable)
+
+EvidenceId
+(FK -> Evidence, nullable)
+
+Recipient
+
+CcRecipients
+
+Subject
+
+Body
+
+SentDate
+
+Status
+
+...
+
+
+PURPOSE:
+
+Preserves the historical record of notifications
+sent or attempted by the platform.
+
+
+EXAMPLE EVENT TYPES:
+
+QuestionnaireReminder
+
+EvidenceExpiration
+
+EntitlementThreshold
+
+
+STATUS EXAMPLES:
+
+Sent
+
+Failed
+
+
+Notification history records:
+
+Who the notification was sent to
+
+Who was CC'd
+
+What was sent
+
+When it was sent
+
+Whether delivery succeeded
+
+
+========================================
+QUESTIONNAIRE REMINDER NOTIFICATIONS
+========================================
+
+Automated questionnaire reminders are required.
+
+
+MVP CADENCE:
+
+First reminder:
+
+7 days after the questionnaire remains outstanding.
+
+
+Subsequent reminders:
+
+Every 3 days while it remains outstanding.
+
+
+Each attempted reminder creates a Notification
+history record.
+
+
+========================================
+EVIDENCE EXPIRATION NOTIFICATIONS
+========================================
+
+Evidence expiration notifications are automatic.
+
+
+Default alert threshold:
+
+30 days before Evidence.ExpirationDate
+
+
+The threshold is configurable.
+
+
+Each attempted alert creates a Notification history
+record.
+
+
+========================================
+CLIENT NOTIFICATION CC
+========================================
+
+For MVP, Client has:
+
+NotificationCcEmail
+
+
+If configured, applicable notifications include this
+address as a CC recipient.
+
+
+Notification.CcRecipients snapshots the actual CC
+recipient used when the message was sent.
+
+
+========================================
+ENTITLEMENT
+========================================
+
+For MVP, entitlement tracking remains directly on
+Client.
+
+
+CLIENT:
+
+EntitlementBalance
+
+
+No separate Entitlement entity is required.
+
+
+========================================
+ENTITLEMENT RULES
+========================================
+
+When an Assessment is initiated:
+
+Client.EntitlementBalance =
+Client.EntitlementBalance - 1
+
+
+Before initiation:
+
+If EntitlementBalance = 0:
+
+Assessment initiation is BLOCKED.
+
+
+Once an entitlement is consumed:
+
+It is NOT returned.
+
+
+This remains true if the Assessment is later:
+
+Cancelled
+
+Abandoned
+
+Never distributed
+
+Never completed
+
+
+No overage behavior is supported for MVP.
+
+
+========================================
+AUDIT LOG ENTRY
+========================================
+
+AUDIT_LOG_ENTRY
+---------------
+AuditLogEntryId (PK)
+
+Timestamp
+
+ActorId
+(FK -> ApplicationUser, nullable)
+
+ActorType
+
+Action
+
+EntityType
+
+EntityId
+
+...
+
+
+PURPOSE:
+
+Provides a centralized immutable audit history of
+write actions across the TPRM platform.
+
+
+EXAMPLES:
+
+Vendor created
+
+Vendor Tier changed
+
+Assessment initiated
+
+Assessment distributed
+
+Response submitted
+
+Evidence uploaded
+
+Review completed
+
+Score calculated
+
+Finding created
+
+Finding resolved
+
+Recommendation added
+
+Report generated
+
+Client acknowledged Report
+
+Assessment closed
+
+
+========================================
+AUDIT LOG RULES
+========================================
+
+AuditLogEntry is append-only and immutable.
+
+
+Allowed:
+
+INSERT
+
+SELECT
+
+
+Not allowed:
+
+UPDATE
+
+DELETE
+
+
+Every write action should generate an audit entry.
+
+
+ActorType identifies whether the change came from:
+
+A user
+
+The system/background process
+
+
+ActorId may be NULL when the action was performed by
+an automated/background process.
+
+
+RETENTION:
+
+AuditLogEntry records must be retained for at least
+2 years.
 
 
 ========================================
@@ -1723,6 +2117,14 @@ AssessmentScore
 CategoryScore
 
 Finding
+
+Report
+
+ReportFile
+
+Notification
+
+AuditLogEntry
 
 
 ========================================
@@ -1829,15 +2231,24 @@ FINDING SEVERITY
 
 Finding stores Severity.
 
-It has not yet been determined whether Severity is:
+The method used to determine Severity remains TBD.
 
-Automatically calculated
 
-Configured from the failed question
+REPORT CSV STRUCTURE
+--------------------
 
-Assigned by the analyst
+Reports support CSV.
 
-or determined through another rule.
+The exact CSV layout is still TBD.
+
+This does not affect the current database model.
+
+
+SERVICENOW
+----------
+
+ServiceNow integration has intentionally not been
+modeled yet.
 
 
 ========================================
