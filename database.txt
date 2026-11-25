@@ -138,12 +138,17 @@ assigned to a Client-Vendor relationship.
 
 MVP RULES:
 
-- A human assigns the Tier.
-- The system does not automatically calculate it.
-- Tier is stored on ClientVendor.
-- Tier determines the standard SIG scope.
-- Tier changes affect future Assessments only.
-- Existing Assessments retain their original scope.
+A human assigns the Tier.
+
+The system does not automatically calculate it.
+
+Tier is stored on ClientVendor.
+
+Tier determines the standard SIG scope.
+
+Tier changes affect future Assessments only.
+
+Existing Assessments retain their original scope.
 
 
 ========================================
@@ -270,34 +275,39 @@ authorization rules.
 KEY PERMISSION RULES:
 
 Netrio Admin:
-- Manage all Clients
-- Add/edit all Vendors
-- Initiate Assessments
-- Send Questionnaires
-- Review/score Responses
-- Manage platform configuration
-- Upload Client questionnaires
-- Manage users
+
+Manage all Clients
+Add/edit all Vendors
+Initiate Assessments
+Send Questionnaires
+Review/score Responses
+Manage platform configuration
+Upload Client questionnaires
+Manage users
 
 Netrio Analyst:
-- Add/edit assigned Vendors
-- Initiate Assessments
-- Send Questionnaires
-- Review/score Responses
-- Upload Client questionnaires
+
+Add/edit assigned Vendors
+Initiate Assessments
+Send Questionnaires
+Review/score Responses
+Upload Client questionnaires
 
 Client Admin:
-- Add/edit own Vendors
-- Request Assessments
-- Send Questionnaires
-- Upload Client questionnaires
-- Manage own organization's users
+
+Add/edit own Vendors
+Request Assessments
+Send Questionnaires
+Upload Client questionnaires
+Manage own organization's users
 
 Client Viewer:
-- Read-only/report-oriented access
+
+Read-only/report-oriented access
 
 Vendor Contact:
-- Complete Questionnaires
+
+Complete Questionnaires
 
 
 ========================================
@@ -366,8 +376,8 @@ questions.
 
 SIG Domain controls:
 
-- Questionnaire organization
-- Tier-based questionnaire scope
+Questionnaire organization
+Tier-based questionnaire scope
 
 
 SIG Domain is separate from ScoringCategory.
@@ -419,11 +429,15 @@ ScoringCategoryId = NULL
 
 CLIENT-SPECIFIC QUESTION RULES:
 
-- Isolated to the owning Client.
-- May be reused for that Client.
-- Does not become standard SIG content.
-- Does not belong to a SIG Domain for MVP.
-- Does not participate in standard scoring for MVP.
+Isolated to the owning Client.
+
+May be reused for that Client.
+
+Does not become standard SIG content.
+
+Does not belong to a SIG Domain for MVP.
+
+Does not participate in standard scoring for MVP.
 
 
 ========================================
@@ -473,6 +487,13 @@ CreatedDate
 DistributedBy
 DistributedDate
 CompletedDate
+
+ClientAcknowledgedBy
+(FK -> ApplicationUser, nullable)
+
+ClientAcknowledgedDate
+(nullable)
+
 ...
 
 
@@ -488,19 +509,24 @@ Represents:
 PERMISSION RULE:
 
 Netrio Admin:
+
 May initiate.
 
 Netrio Analyst:
+
 May initiate.
 
 Client Admin:
+
 May request an Assessment but cannot directly
 initiate one.
 
 Client Viewer:
+
 Cannot initiate.
 
 Vendor Contact:
+
 Cannot initiate.
 
 
@@ -529,6 +555,43 @@ scoring configuration.
 Assessment does not directly store OverallScore.
 
 Score history is stored in AssessmentScore.
+
+
+CLIENT REVIEW:
+
+Client Review is read-only.
+
+The Client reviews the score, Findings, and
+Recommendations.
+
+The Client acknowledges the Assessment.
+
+ClientAcknowledgedBy records who acknowledged it.
+
+ClientAcknowledgedDate records when acknowledgment
+occurred.
+
+
+CLOSURE:
+
+Once the Assessment reaches Closure, the entire
+Assessment becomes immutable.
+
+After Closure:
+
+No new Responses.
+
+No new Evidence may be attached to Responses.
+
+No new Reviews.
+
+No Finding changes.
+
+No new score calculations.
+
+No questionnaire scope changes.
+
+No acknowledgment changes.
 
 
 ========================================
@@ -570,14 +633,6 @@ Client Review
 Closure
 
 
-NOTE:
-
-Findings and Recommendations is listed only as a
-workflow stage.
-
-Findings have not yet been modeled.
-
-
 ========================================
 ASSESSMENT QUESTION GENERATION
 ========================================
@@ -607,21 +662,21 @@ AssessmentQuestion snapshot
 
 PROCESS:
 
-1. Assessment is initiated.
+Assessment is initiated.
 
-2. Read Tier from ClientVendor.
+Read Tier from ClientVendor.
 
-3. Store Tier as Assessment.TierIdSnapshot.
+Store Tier as Assessment.TierIdSnapshot.
 
-4. Retrieve applicable SIG Domains.
+Retrieve applicable SIG Domains.
 
-5. Retrieve applicable standard SIG questions.
+Retrieve applicable standard SIG questions.
 
-6. Create AssessmentQuestion snapshots.
+Create AssessmentQuestion snapshots.
 
-7. Apply permitted manual adjustments.
+Apply permitted manual adjustments.
 
-8. Freeze question scope at Distribution.
+Freeze question scope at Distribution.
 
 
 ========================================
@@ -633,7 +688,6 @@ ASSESSMENT_QUESTION
 AssessmentQuestionId (PK)
 AssessmentId (FK -> Assessment)
 QuestionTemplateId (FK -> QuestionTemplate, nullable)
-
 QuestionTextSnapshot
 WeightSnapshot
 QuestionSourceSnapshot
@@ -673,9 +727,11 @@ MANUAL QUESTION ADJUSTMENTS
 
 Before Distribution, authorized Netrio personnel may:
 
-- Add Client-specific questions
-- Exclude standard questions
-- Reverse exclusions
+Add Client-specific questions
+
+Exclude standard questions
+
+Reverse exclusions
 
 
 Client Admin may upload a Client questionnaire.
@@ -697,17 +753,23 @@ They are marked as excluded.
 AssessmentQuestion:
 
 IsExcluded = true
+
 ExcludedBy = User
+
 ExcludedDate = timestamp
+
 ExclusionReason = reason
 
 
 EXCLUDED QUESTIONS:
 
-- Are not shown to Vendor
-- Cannot receive Responses
-- Do not require Review
-- Do not participate in scoring
+Are not shown to Vendor
+
+Cannot receive Responses
+
+Do not require Review
+
+Do not participate in scoring
 
 
 ========================================
@@ -718,21 +780,28 @@ BEFORE DISTRIBUTION:
 
 Authorized Netrio personnel may:
 
-- Add Client-specific questions
-- Exclude questions
-- Reverse exclusions
+Add Client-specific questions
+
+Exclude questions
+
+Reverse exclusions
 
 
 AFTER DISTRIBUTION:
 
 Questions cannot be:
 
-- Added
-- Removed
-- Excluded
-- Restored
-- Reworded
-- Reweighted
+Added
+
+Removed
+
+Excluded
+
+Restored
+
+Reworded
+
+Reweighted
 
 
 The question scope becomes immutable when the
@@ -743,9 +812,11 @@ PERMISSION RULE:
 
 Questionnaires may be sent by:
 
-- Netrio Admin
-- Netrio Analyst
-- Client Admin
+Netrio Admin
+
+Netrio Analyst
+
+Client Admin
 
 
 Assessment.DistributedBy and DistributedDate record
@@ -883,21 +954,27 @@ ReviewedDate
 AUTHORIZED REVIEWERS:
 
 Netrio Admin
+
 Netrio Analyst
 
 
 NOT AUTHORIZED:
 
 Client Admin
+
 Client Viewer
+
 Vendor Contact
 
 
 STATUSES:
 
 Not Reviewed
+
 Flagged
+
 Accepted
+
 Rejected
 
 
@@ -969,12 +1046,14 @@ a terminal Review status.
 TERMINAL:
 
 Accepted
+
 Rejected
 
 
 NON-TERMINAL:
 
 Not Reviewed
+
 Flagged
 
 
@@ -1119,10 +1198,13 @@ Maps an OverallScore to a risk rating.
 
 VALIDATION:
 
-- Threshold ranges cannot overlap.
-- Every valid score maps to one active threshold.
-- MinScore cannot exceed MaxScore.
-- Used configuration versions are immutable.
+Threshold ranges cannot overlap.
+
+Every valid score maps to one active threshold.
+
+MinScore cannot exceed MaxScore.
+
+Used configuration versions are immutable.
 
 
 ========================================
@@ -1150,6 +1232,7 @@ Represents one complete scoring run.
 AUTHORIZED SCORING:
 
 Netrio Admin
+
 Netrio Analyst
 
 
@@ -1245,6 +1328,349 @@ Flagged or Not Reviewed questions prevent Scoring.
 
 
 ========================================
+FINDING
+========================================
+
+FINDING
+-------
+FindingId (PK)
+
+AssessmentQuestionId
+(FK -> AssessmentQuestion)
+
+CreatedFromReviewId
+(FK -> Review)
+
+ResolvedByReviewId
+(FK -> Review, nullable)
+
+Title
+Description
+
+Recommendation
+
+Severity
+
+Status
+
+CreatedDate
+ResolvedDate
+
+...
+
+
+PURPOSE:
+
+Represents a risk identified from a Rejected
+Response.
+
+
+MVP RELATIONSHIP:
+
+One Rejected Response produces one Finding.
+
+Findings are not consolidated across multiple
+questions for the MVP.
+
+
+FINDING CREATION:
+
+When the current Response receives:
+
+Review.Status = Rejected
+
+the system automatically creates a new Finding.
+
+
+The Finding is associated with:
+
+- The AssessmentQuestion that failed
+- The Rejected Review that created the Finding
+
+
+NEW FINDING:
+
+Status = Open
+
+
+TITLE:
+
+Automatically generated from the rejected
+AssessmentQuestion.
+
+
+DESCRIPTION:
+
+Automatically generated from the rejected
+AssessmentQuestion / Response.
+
+
+RECOMMENDATION:
+
+Written manually by Netrio Analyst or Netrio Admin.
+
+
+SEVERITY:
+
+Stored on the Finding.
+
+The mechanism used to determine Severity has not yet
+been defined.
+
+
+========================================
+FINDING RESOLUTION
+========================================
+
+A Finding is never deleted merely because the Vendor
+later fixes the issue.
+
+
+Example:
+
+Response v1
+
+    ↓
+
+Review = Rejected
+
+    ↓
+
+Finding #1
+
+Status = Open
+
+
+Vendor submits Response v2.
+
+Response v2:
+
+    ↓
+
+Review = Accepted
+
+    ↓
+
+Finding #1
+
+Status = Resolved
+
+
+When resolved:
+
+ResolvedByReviewId points to the Accepted Review.
+
+ResolvedDate records when the Finding was resolved.
+
+
+The original Finding remains permanently for audit
+history.
+
+
+========================================
+REPEATED FINDINGS
+========================================
+
+A Resolved Finding is never reopened.
+
+
+Example:
+
+Response v1
+
+    ↓
+
+Rejected
+
+    ↓
+
+Finding #1 = Open
+
+
+Response v2
+
+    ↓
+
+Accepted
+
+    ↓
+
+Finding #1 = Resolved
+
+
+Response v3
+
+    ↓
+
+Rejected
+
+    ↓
+
+Finding #2 = Open
+
+
+Finding #1 remains Resolved.
+
+Finding #2 represents the new occurrence.
+
+
+========================================
+FINDINGS & RECOMMENDATIONS COMPLETION
+========================================
+
+Every Open Finding must have a Recommendation before
+the Assessment may move from:
+
+Findings and Recommendations
+
+to:
+
+Client Review
+
+
+Example:
+
+Finding #1
+
+Status = Open
+
+Recommendation =
+"Require MFA for privileged accounts."
+
+READY
+
+
+Finding #2
+
+Status = Open
+
+Recommendation = NULL
+
+NOT READY
+
+
+Resolved Findings do not block progression to
+Client Review.
+
+
+========================================
+FINDING FREEZE
+========================================
+
+When the Assessment enters Client Review, all Findings
+become immutable.
+
+
+During Client Review:
+
+Title cannot change.
+
+Description cannot change.
+
+Recommendation cannot change.
+
+Severity cannot change.
+
+Findings cannot be deleted.
+
+
+No separate IsLocked field is required.
+
+The rule is enforced based on Assessment.Status.
+
+
+========================================
+CLIENT REVIEW
+========================================
+
+Client Review is read-only for the MVP.
+
+
+The Client reviews:
+
+- Assessment score
+- Findings
+- Recommendations
+
+
+The Client does not:
+
+- Edit Findings
+- Reject Findings
+- Approve individual Findings
+- Request Finding changes through a workflow
+
+
+The Client acknowledges the Assessment.
+
+
+Acknowledgment is stored on Assessment:
+
+ClientAcknowledgedBy
+
+ClientAcknowledgedDate
+
+
+After acknowledgment, the Assessment may move to
+Closure.
+
+
+========================================
+RESOLVED FINDINGS
+========================================
+
+Resolved Findings remain visible in the final
+Assessment history and eventual report.
+
+
+The Client can therefore distinguish:
+
+OPEN FINDINGS:
+
+Risks that still exist.
+
+
+RESOLVED FINDINGS:
+
+Risks identified during the Assessment that were
+subsequently remediated.
+
+
+Resolved Findings are not deleted or hidden.
+
+
+========================================
+ASSESSMENT CLOSURE
+========================================
+
+Once the Assessment reaches Closure, the entire
+Assessment becomes read-only.
+
+
+After Closure:
+
+No new Responses.
+
+No new Evidence attached to Responses.
+
+No new Reviews.
+
+No new Findings.
+
+No Finding changes.
+
+No score recalculations.
+
+No questionnaire scope changes.
+
+No Client acknowledgment changes.
+
+
+Historical records remain available for audit and
+reporting purposes.
+
+
+========================================
 CURRENT DATABASE ENTITIES
 ========================================
 
@@ -1296,6 +1722,8 @@ AssessmentScore
 
 CategoryScore
 
+Finding
+
 
 ========================================
 OPEN REQUIREMENTS
@@ -1332,11 +1760,11 @@ Vendor Contact can complete questionnaires.
 
 It remains unclear whether Vendor Contacts see:
 
-- Every Assessment involving their Vendor
+Every Assessment involving their Vendor
 
 or
 
-- Only explicitly assigned Assessments
+Only explicitly assigned Assessments
 
 
 No additional entity has been added for this yet.
@@ -1396,12 +1824,20 @@ Not yet determined.
 No override fields have been added.
 
 
-FINDINGS AND RECOMMENDATIONS
-----------------------------
+FINDING SEVERITY
+----------------
 
-Exists as an Assessment workflow stage.
+Finding stores Severity.
 
-No Finding entities have been added yet.
+It has not yet been determined whether Severity is:
+
+Automatically calculated
+
+Configured from the failed question
+
+Assigned by the analyst
+
+or determined through another rule.
 
 
 ========================================
