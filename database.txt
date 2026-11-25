@@ -1,0 +1,1565 @@
+========================================
+TPRM - CURRENT WORKING DATABASE MODEL
+========================================
+
+
+========================================
+1. CLIENTS AND VENDORS
+========================================
+
+
+CLIENT
+------
+ClientId (PK)
+Name
+CreatedDate
+...
+
+
+Purpose:
+
+Represents a company purchasing and using the
+TPRM service.
+
+
+VENDOR
+------
+VendorId (PK)
+Name
+CreatedDate
+...
+
+
+Purpose:
+
+Represents a real-world third-party company.
+
+Under our working design, a Vendor exists once
+globally.
+
+Example:
+
+Microsoft is one Vendor record, even when multiple
+Clients use Microsoft.
+
+
+CLIENT_VENDOR
+-------------
+ClientVendorId (PK)
+
+ClientId (FK -> Client)
+VendorId (FK -> Vendor)
+
+TierId (FK -> VendorTier)
+
+CreatedDate
+...
+
+
+Constraints:
+
+UNIQUE (ClientId, VendorId)
+
+
+Purpose:
+
+Represents the relationship between a particular
+Client and Vendor.
+
+This is no longer merely a technical join table.
+It contains business information about the Client's
+relationship with the Vendor.
+
+
+Example:
+
+Acme Bank + Microsoft
+    Tier = 4
+
+Capital One + Microsoft
+    Tier = 3
+
+
+Tier belongs to CLIENT_VENDOR rather than VENDOR
+because different Clients may classify the same
+Vendor differently.
+
+
+IMPORTANT:
+
+This differs from the original requirements document,
+which models each Vendor as belonging to one Client.
+
+Our working design uses:
+
+Global Vendor
+    +
+ClientVendor relationship
+
+
+========================================
+2. VENDOR TIERS
+========================================
+
+
+VENDOR_TIER
+-----------
+TierId (PK)
+
+TierNumber
+Name
+Description
+IsActive
+...
+
+
+Example values:
+
+Tier 1
+Tier 2
+Tier 3
+Tier 4
+
+
+Purpose:
+
+Represents the risk/criticality classification assigned
+to a Client-Vendor relationship.
+
+A human assigns the tier.
+
+The system does not automatically calculate the tier
+for the MVP.
+
+
+Example:
+
+ClientVendor
+    Client = Acme Bank
+    Vendor = Microsoft
+    Tier = 4
+
+
+A change to ClientVendor.TierId affects future
+Assessments only.
+
+It does not modify the question scope of an existing
+Assessment.
+
+
+========================================
+3. SIG QUESTIONNAIRE AND DOMAINS
+========================================
+
+
+QUESTIONNAIRE_TEMPLATE
+----------------------
+TemplateId (PK)
+
+Name
+Version
+Source
+
+IsActive
+CreatedDate
+...
+
+
+Example:
+
+Name = SIG
+Version = 2026
+Source = Standard SIG
+
+
+Purpose:
+
+Represents a reusable questionnaire definition.
+
+For the MVP, most Clients use the standard SIG
+questionnaire.
+
+SIG means:
+
+Standardized Information Gathering questionnaire.
+
+It is the standard security/risk questionnaire used
+to assess Vendors.
+
+
+DOMAIN
+------
+DomainId (PK)
+
+TemplateId (FK -> QuestionnaireTemplate)
+
+Name
+Description
+...
+
+
+Purpose:
+
+Represents a category of questions within a
+questionnaire.
+
+Examples could include:
+
+Access Control
+Data Protection
+Incident Management
+Business Continuity
+
+
+The actual SIG domain structure should be mirrored
+from the licensed SIG source.
+
+We will not invent a more flexible domain model until
+the real SIG structure is available.
+
+
+QUESTION_TEMPLATE
+-----------------
+QuestionTemplateId (PK)
+
+TemplateId (FK -> QuestionnaireTemplate)
+
+DomainId (FK -> Domain, nullable)
+
+ClientId (FK -> Client, nullable)
+
+QuestionText
+Weight
+
+Source
+IsActive
+
+CreatedBy
+CreatedDate
+...
+
+
+Source examples:
+
+SIG
+Custom
+
+
+Purpose:
+
+Represents a reusable master question.
+
+
+Standard SIG question:
+
+ClientId = NULL
+Source = SIG
+DomainId = applicable SIG domain
+
+
+Client-specific custom question:
+
+ClientId = owning Client
+Source = Custom
+DomainId = NULL
+
+
+IMPORTANT:
+
+Clients cannot create or edit questions.
+
+Only a Netrio Admin can create, edit, or configure
+questions.
+
+A Client may communicate a customization request to
+Netrio outside the platform.
+
+The Netrio Admin then creates the custom question.
+
+
+CUSTOM QUESTION MVP RULES:
+
+1. Created only by Netrio Admin.
+
+2. Associated with one Client.
+
+3. Reusable in future Assessments for that Client.
+
+4. Invisible and unavailable to other Clients.
+
+5. Not added to the standard SIG questionnaire.
+
+6. Not assigned to a SIG Domain.
+
+7. Kept separate from standard SIG domain scoring.
+
+
+NOTE:
+
+We currently model a standard QuestionTemplate as
+belonging to one Domain.
+
+This should be adjusted if the licensed SIG structure
+shows that one question may belong to multiple
+domains.
+
+
+========================================
+4. TIER-TO-DOMAIN SCOPE
+========================================
+
+
+TIER_DOMAIN
+-----------
+TierId (PK, FK -> VendorTier)
+DomainId (PK, FK -> Domain)
+
+CreatedBy
+CreatedDate
+...
+
+
+Purpose:
+
+Defines which standard SIG Domains apply to each
+Vendor Tier.
+
+
+Example:
+
+Tier 2
+    |
+    +-- Access Control
+    +-- Data Protection
+
+
+Tier 4
+    |
+    +-- Access Control
+    +-- Data Protection
+    +-- Incident Management
+    +-- Business Continuity
+    +-- Additional SIG Domains
+
+
+Only a Netrio Admin can configure the Tier-to-Domain
+mapping.
+
+
+The system uses this configuration when preparing
+the initial Assessment question scope.
+
+
+IMPORTANT:
+
+Changing TIER_DOMAIN configuration affects future
+Assessments only.
+
+It does not add or remove questions from an existing
+Assessment.
+
+
+========================================
+5. ASSESSMENT
+========================================
+
+
+ASSESSMENT
+----------
+AssessmentId (PK)
+
+ClientVendorId (FK -> ClientVendor)
+
+TemplateId (FK -> QuestionnaireTemplate)
+
+TierIdSnapshot (FK -> VendorTier)
+
+Status
+
+CreatedBy
+CreatedDate
+
+DistributedBy
+DistributedDate
+
+CompletedDate
+OverallScore
+
+...
+
+
+Purpose:
+
+The central business object in the TPRM platform.
+
+Represents:
+
+"Client X is assessing Vendor Y."
+
+
+Client and Vendor can be determined through:
+
+Assessment
+    -> ClientVendor
+        -> Client
+        -> Vendor
+
+
+TierIdSnapshot records which Tier was used when the
+Assessment scope was prepared.
+
+
+Example:
+
+Acme Bank's 2026 Microsoft Assessment
+
+ClientVendor:
+    Acme Bank + Microsoft
+
+TierIdSnapshot:
+    Tier 4
+
+
+ASSESSMENT WORKFLOW
+-------------------
+
+Initiation
+
+Questionnaire Assignment
+
+Distribution
+
+Vendor Response
+
+Netrio Review
+
+Scoring
+
+Findings and Recommendations
+
+Client Review
+
+Closure
+
+
+NOTE:
+
+We currently retain TemplateId on Assessment because
+the MVP primarily uses the standard SIG questionnaire.
+
+This relationship may change if an Assessment must
+combine multiple independent questionnaire templates.
+
+
+========================================
+6. ASSESSMENT QUESTION GENERATION
+========================================
+
+
+The initial Assessment scope is produced through:
+
+ClientVendor
+    |
+    +-- TierId
+            |
+            +-- TierDomain
+                    |
+                    +-- Domain
+                            |
+                            +-- QuestionTemplate
+
+
+The applicable standard questions are then copied
+into ASSESSMENT_QUESTION.
+
+
+Conceptual workflow:
+
+1. Create Assessment.
+
+2. Read the Tier from ClientVendor.
+
+3. Record that Tier in Assessment.TierIdSnapshot.
+
+4. Retrieve the SIG Domains configured for that Tier.
+
+5. Retrieve the standard SIG questions belonging to
+   those Domains.
+
+6. Create AssessmentQuestion snapshots.
+
+7. Allow Netrio Admin to make permitted manual
+   adjustments.
+
+8. Freeze the final scope when the Assessment is
+   distributed.
+
+
+========================================
+7. ASSESSMENT QUESTIONS
+========================================
+
+
+ASSESSMENT_QUESTION
+-------------------
+AssessmentQuestionId (PK)
+
+AssessmentId (FK -> Assessment)
+
+QuestionTemplateId (FK -> QuestionTemplate, nullable)
+
+QuestionTextSnapshot
+WeightSnapshot
+
+QuestionSourceSnapshot
+
+IsExcluded
+ExcludedBy
+ExcludedDate
+ExclusionReason
+
+AddedManually
+AddedBy
+AddedDate
+
+CreatedDate
+...
+
+
+QuestionSourceSnapshot examples:
+
+SIG
+Custom
+
+
+Purpose:
+
+Represents an actual question considered for a
+specific Assessment.
+
+It preserves the exact question, weight, and source
+used when the Assessment was prepared.
+
+
+QUESTION SNAPSHOT RULE
+----------------------
+
+Changing QuestionTemplate later does not modify an
+existing AssessmentQuestion.
+
+
+Example:
+
+2026 Template:
+
+"Do you use MFA?"
+
+
+2026 AssessmentQuestion:
+
+"Do you use MFA?"
+
+
+2027 Template changed to:
+
+"Do you use phishing-resistant MFA?"
+
+
+The 2026 AssessmentQuestion remains:
+
+"Do you use MFA?"
+
+
+========================================
+8. MANUAL QUESTION ADJUSTMENTS
+========================================
+
+
+Before distribution, a Netrio Admin may:
+
+1. Add a Client-specific custom question.
+
+2. Exclude a standard question selected by the
+   Tier/Domain rules.
+
+
+Clients do not directly customize the question set
+inside the platform.
+
+Clients communicate customization requests to Netrio
+outside the platform.
+
+Netrio Admin performs the adjustment.
+
+
+CUSTOM QUESTION ADDITION
+------------------------
+
+A custom question is first created as a reusable
+QuestionTemplate owned by the relevant Client.
+
+It is then copied into AssessmentQuestion.
+
+
+Example:
+
+QuestionTemplate:
+
+Question:
+"Does the Vendor permit customer-managed
+encryption keys?"
+
+Source:
+Custom
+
+ClientId:
+Acme Bank
+
+
+AssessmentQuestion:
+
+QuestionTextSnapshot:
+"Does the Vendor permit customer-managed
+encryption keys?"
+
+QuestionSourceSnapshot:
+Custom
+
+AddedManually:
+true
+
+
+QUESTION EXCLUSION
+------------------
+
+Questions are not physically deleted from the
+Assessment scope.
+
+Instead, the corresponding AssessmentQuestion is
+marked as excluded.
+
+
+Example:
+
+Tier rules originally select:
+
+Q1
+Q2
+Q3
+Q4
+Q5
+
+
+Netrio Admin excludes Q3.
+
+
+AssessmentQuestion for Q3:
+
+IsExcluded = true
+
+ExcludedBy = Netrio Admin user
+
+ExcludedDate = timestamp
+
+ExclusionReason =
+"Not applicable to this Vendor."
+
+
+Vendor receives:
+
+Q1
+Q2
+Q4
+Q5
+
+
+Purpose:
+
+Preserves an audit trail showing:
+
+1. What the tiering rules originally selected.
+
+2. What Netrio Admin changed.
+
+3. Who made the change.
+
+4. When it was changed.
+
+5. Why it was changed.
+
+
+========================================
+9. ASSESSMENT SCOPE FREEZE
+========================================
+
+
+Before Distribution:
+
+Netrio Admin MAY:
+
+Add a custom question.
+
+Exclude a selected question.
+
+Reverse an exclusion if appropriate.
+
+
+After Distribution:
+
+Questions cannot be added.
+
+Questions cannot be removed.
+
+Exclusion status cannot be changed.
+
+Question wording cannot be changed.
+
+Question weight cannot be changed.
+
+
+The Assessment's question scope becomes immutable
+when Assessment.DistributedDate is populated and the
+Assessment enters the Distribution/Vendor Response
+workflow.
+
+
+This prevents the Vendor's questionnaire from changing
+after the Vendor begins responding.
+
+
+========================================
+10. RESPONSES
+========================================
+
+
+RESPONSE
+--------
+ResponseId (PK)
+
+AssessmentQuestionId (FK -> AssessmentQuestion)
+
+Answer
+
+SubmittedBy
+SubmittedDate
+
+...
+
+
+Purpose:
+
+Stores a Vendor's response to an AssessmentQuestion.
+
+
+Responses are append-only.
+
+Once submitted, a Response is not edited or
+overwritten.
+
+If a Vendor needs to change an answer or provide
+updated evidence, the Vendor submits a new Response.
+
+
+Example:
+
+AssessmentQuestion
+|
++-- Response v1
+|   Answer = "No"
+|   SubmittedDate = Jan 5
+|
++-- Response v2
+    Answer = "Yes"
+    SubmittedDate = Jan 12
+
+
+Both Responses remain in the database.
+
+
+Excluded AssessmentQuestions cannot receive Responses.
+
+
+========================================
+11. CURRENT RESPONSE
+========================================
+
+
+For the MVP, the current Response is the Response
+with the newest SubmittedDate for an
+AssessmentQuestion.
+
+
+Conceptually:
+
+SELECT TOP 1 Response
+WHERE AssessmentQuestionId = X
+ORDER BY SubmittedDate DESC
+
+
+The MVP currently does not use:
+
+Response.IsCurrent
+
+or:
+
+AssessmentQuestion.CurrentResponseId
+
+
+IMPORTANT BUSINESS RULE:
+
+Submitting a new Response requires a new analyst
+Review.
+
+A Review attached to an older Response does not apply
+to the new Response.
+
+
+========================================
+12. EVIDENCE
+========================================
+
+
+EVIDENCE
+--------
+EvidenceId (PK)
+
+FileName
+StorageLocation
+
+UploadedBy
+UploadedDate
+
+ExpirationDate
+Version
+
+...
+
+
+Purpose:
+
+Represents an evidence document uploaded by the
+Vendor.
+
+Examples:
+
+SOC2.pdf
+
+MFA_Policy.pdf
+
+PenTest_Report.pdf
+
+
+Evidence files are stored once.
+
+The same Evidence record may support multiple
+Responses.
+
+
+RESPONSE_EVIDENCE
+-----------------
+ResponseId (PK, FK -> Response)
+EvidenceId (PK, FK -> Evidence)
+
+
+Purpose:
+
+Provides the many-to-many relationship between
+Response and Evidence.
+
+
+Example:
+
+                 SOC2.pdf
+                /        \
+         Response A     Response B
+
+
+This avoids storing duplicate copies of the same
+document when it supports multiple answers.
+
+
+========================================
+13. WHY EVIDENCE ATTACHES TO RESPONSE
+========================================
+
+
+Evidence is associated with a specific Response
+instead of attaching directly to AssessmentQuestion.
+
+
+Example:
+
+AssessmentQuestion
+|
++-- Response v1
+|   |
+|   +-- Answer = "Yes"
+|   |
+|   +-- Evidence:
+|       Old_PenTest_2021.pdf
+|
++-- Response v2
+    |
+    +-- Answer = "Yes"
+    |
+    +-- Evidence:
+        PenTest_2026.pdf
+
+
+This preserves exactly which Evidence supported each
+historical Response.
+
+
+========================================
+14. EVIDENCE REVIEW
+========================================
+
+
+For the MVP, Evidence does not have its own Review
+status.
+
+
+We are not currently creating:
+
+EvidenceReview
+
+EvidenceStatus
+
+EvidenceApproval
+
+
+The analyst reviews the Response and all supporting
+Evidence as one unit.
+
+
+Example:
+
+Response:
+
+"Yes, we perform annual penetration testing."
+
+
+Evidence:
+
+SOC2.pdf
+
+MFA_Policy.pdf
+
+Old_PenTest.pdf
+
+
+The Response may still be submitted.
+
+During Review, the analyst may Flag it because the
+penetration-testing evidence is expired.
+
+
+========================================
+15. ANALYST REVIEW
+========================================
+
+
+REVIEW
+------
+ReviewId (PK)
+
+ResponseId (FK -> Response)
+
+Status
+Comments
+
+ReviewedBy
+ReviewedDate
+
+...
+
+
+Purpose:
+
+Records an analyst's decision about a specific
+Response and its supporting Evidence.
+
+
+MVP Review statuses:
+
+Not Reviewed
+
+Flagged
+
+Accepted
+
+Rejected
+
+
+STATUS MEANINGS
+---------------
+
+
+NOT REVIEWED
+
+The current Response has not been reviewed.
+
+Non-terminal status.
+
+
+FLAGGED
+
+The analyst cannot resolve the current Response.
+
+The Vendor must provide additional or corrected
+information or Evidence.
+
+Non-terminal status.
+
+
+ACCEPTED
+
+The analyst accepts the Response.
+
+Terminal status.
+
+
+REJECTED
+
+The analyst rejects the Response.
+
+Terminal status.
+
+A Rejected Response may represent a genuine control
+failure.
+
+It does not necessarily block the Assessment from
+proceeding.
+
+
+IMPORTANT:
+
+The precise business distinction between Flagged and
+Rejected should still be confirmed with the product
+owner.
+
+
+========================================
+16. FLAGGED RESPONSE WORKFLOW
+========================================
+
+
+For the MVP, there is no separate messaging or
+conversation system.
+
+
+Example:
+
+Response v1
+|
++-- Answer:
+|   "Yes"
+|
++-- Evidence:
+|   Old_PenTest_2021.pdf
+|
++-- Review
+    |
+    +-- Status:
+    |   Flagged
+    |
+    +-- Comments:
+        "Please provide a current penetration
+         testing report."
+
+
+The Vendor does not modify Response v1.
+
+
+The Vendor submits:
+
+Response v2
+|
++-- Answer:
+|   "Yes"
+|
++-- Evidence:
+|   PenTest_2026.pdf
+|
++-- Review:
+    Not Reviewed
+
+
+The analyst then reviews Response v2.
+
+
+The complete history is retained.
+
+
+========================================
+17. ASSESSMENT REVIEW COMPLETION
+========================================
+
+
+For the MVP:
+
+An Assessment cannot proceed from Netrio Review to
+Scoring until the current Response for every included
+AssessmentQuestion has reached a terminal Review
+status.
+
+
+Terminal statuses:
+
+Accepted
+
+Rejected
+
+
+Non-terminal statuses:
+
+Not Reviewed
+
+Flagged
+
+
+Excluded AssessmentQuestions are ignored when
+determining Review completion.
+
+
+Example:
+
+500 included AssessmentQuestions
+
+470 Accepted
+
+20 Rejected
+
+10 Flagged
+
+
+Result:
+
+Assessment cannot proceed to Scoring.
+
+
+After clarification:
+
+490 Accepted
+
+10 Rejected
+
+0 Flagged
+
+0 Not Reviewed
+
+
+Result:
+
+Assessment can proceed to Scoring.
+
+
+If a Vendor submits a new Response after an older
+Response was Accepted or Rejected, the new Response
+requires a new Review.
+
+
+========================================
+18. FINDINGS
+========================================
+
+
+FINDING
+-------
+FindingId (PK)
+
+AssessmentId (FK -> Assessment)
+
+Title
+Description
+
+Severity
+Recommendation
+
+CreatedBy
+CreatedDate
+
+...
+
+
+Purpose:
+
+Represents a meaningful risk/problem identified
+during an Assessment.
+
+A Finding is not necessarily equivalent to one
+Rejected question.
+
+Multiple related AssessmentQuestions may contribute
+to one Finding.
+
+
+Example:
+
+Question 12:
+No MFA
+
+Question 13:
+No MFA for administrators
+
+Question 14:
+No MFA for service accounts
+
+
+Consolidated Finding:
+
+"Weak Identity and Access Management"
+
+
+Recommendation:
+
+"Implement MFA across user, privileged, and service
+accounts."
+
+
+FINDING_QUESTION
+----------------
+FindingId (PK, FK -> Finding)
+
+AssessmentQuestionId
+(PK, FK -> AssessmentQuestion)
+
+
+Purpose:
+
+Creates a many-to-many relationship between Findings
+and AssessmentQuestions.
+
+
+========================================
+19. SCORING - CURRENT UNDERSTANDING
+========================================
+
+
+Standard SIG questions may have different weights.
+
+
+Example:
+
+Encryption at Rest             50%
+
+MFA                             30%
+
+Security Awareness Training    20%
+
+
+Rejected high-weight controls may have a larger
+effect on the risk score.
+
+
+Custom questions remain outside standard SIG domain
+scoring for the MVP.
+
+
+The detailed scoring algorithm has not yet been
+finalized.
+
+
+Open scoring questions include:
+
+How Accepted and Rejected Responses translate into
+points.
+
+Whether Flagged Responses receive no score until
+resolved.
+
+How domain scores are calculated.
+
+How domain weights affect the overall score.
+
+Whether Netrio Admin can override a calculated score.
+
+How risk-rating thresholds are configured.
+
+How Findings and their severities relate to the
+question score.
+
+
+========================================
+20. COMPLETE RELATIONSHIP MODEL
+========================================
+
+
+Client
+|
++--< ClientVendor >-- Vendor
+        |
+        +-- VendorTier
+                |
+                +-- TierDomain
+                        |
+                        +-- Domain
+                                |
+                                +-- QuestionTemplate
+
+
+QuestionnaireTemplate
+|
++-- Domain
+|
++-- QuestionTemplate
+
+
+Client
+|
++-- Client-owned custom QuestionTemplate
+        |
+        +-- No SIG Domain
+        |
+        +-- Created by Netrio Admin
+
+
+ClientVendor
+|
++-- Assessment
+        |
+        +-- TierIdSnapshot
+        |
+        +-- AssessmentQuestion
+        |       |
+        |       +-- Standard SIG question snapshot
+        |       |
+        |       +-- Custom question snapshot
+        |       |
+        |       +-- Optional exclusion audit data
+        |       |
+        |       +-- Response v1
+        |       |       |
+        |       |       +-- ResponseEvidence
+        |       |       |       |
+        |       |       |       +-- Evidence
+        |       |       |
+        |       |       +-- Review
+        |       |
+        |       +-- Response v2
+        |               |
+        |               +-- ResponseEvidence
+        |               |       |
+        |               |       +-- Evidence
+        |               |
+        |               +-- Review
+        |
+        +-- Finding
+                |
+                +-- FindingQuestion
+                        |
+                        +-- AssessmentQuestion
+
+
+========================================
+21. CURRENT DESIGN DECISIONS
+========================================
+
+
+1. Assessment is the central business object.
+
+2. Vendor represents a real-world company and exists
+   globally in our working design.
+
+3. ClientVendor represents a Client's relationship
+   with a Vendor.
+
+4. ClientVendor has its own identifier because it
+   contains business data.
+
+5. Vendor Tier belongs to ClientVendor.
+
+6. A human assigns the Vendor Tier.
+
+7. Netrio Admin configures which standard SIG Domains
+   apply to each Tier.
+
+8. Tier and tier-scope changes affect future
+   Assessments only.
+
+9. Assessment records the Tier used through
+   TierIdSnapshot.
+
+10. Most Clients use the standard SIG questionnaire.
+
+11. Standard SIG questions are organized by Domain.
+
+12. The licensed SIG structure should determine the
+    final Question-to-Domain relationship.
+
+13. Only Netrio Admin can create or configure
+    questions.
+
+14. Clients cannot create or edit questions.
+
+15. A Client may request customization outside the
+    platform.
+
+16. Netrio Admin creates Client-specific custom
+    questions.
+
+17. Custom questions may be reused only for the
+    owning Client.
+
+18. Other Clients cannot see or use those custom
+    questions.
+
+19. Custom questions do not belong to SIG Domains
+    for the MVP.
+
+20. Custom questions do not participate in standard
+    SIG domain scoring for the MVP.
+
+21. Tier and domain configuration generate the
+    initial standard question scope.
+
+22. Netrio Admin may manually add a Client-specific
+    custom question before Distribution.
+
+23. Netrio Admin may exclude an automatically selected
+    standard question before Distribution.
+
+24. An excluded question remains in
+    AssessmentQuestion for auditability.
+
+25. Exclusion records who excluded the question,
+    when, and why.
+
+26. Assessment question scope freezes at Distribution.
+
+27. Questions cannot be added, removed, excluded, or
+    edited after Distribution.
+
+28. AssessmentQuestion snapshots the question text,
+    weight, and source.
+
+29. Later QuestionTemplate changes do not modify
+    historical AssessmentQuestions.
+
+30. Responses are append-only.
+
+31. Submitted Responses are never overwritten.
+
+32. The newest Response by SubmittedDate is treated
+    as current for the MVP.
+
+33. A new Response requires a new Review.
+
+34. Evidence attaches to Response.
+
+35. Evidence may support multiple Responses.
+
+36. Evidence does not have its own Review workflow
+    for the MVP.
+
+37. The analyst reviews the Response and Evidence
+    together.
+
+38. Review belongs to a specific Response.
+
+39. Review statuses are Not Reviewed, Flagged,
+    Accepted, and Rejected.
+
+40. Accepted and Rejected are terminal.
+
+41. Not Reviewed and Flagged are non-terminal.
+
+42. Flagging uses Review.Comments to tell the Vendor
+    what must be corrected.
+
+43. There is no separate clarification-chat entity
+    for the MVP.
+
+44. A Flagged Response is not edited.
+
+45. The Vendor submits a new Response.
+
+46. An Assessment cannot proceed to Scoring while an
+    included current Response is Flagged or
+    Not Reviewed.
+
+47. Rejected Responses do not automatically block
+    progression to Scoring.
+
+48. Excluded questions do not require Responses or
+    Reviews.
+
+49. Multiple AssessmentQuestions may contribute to
+    one Finding.
+
+50. Historical Assessment information is preserved
+    rather than overwritten.
+
+
+========================================
+22. OPEN OR NOT YET FINALIZED
+========================================
+
+
+1. VENDOR OWNERSHIP
+
+Working design:
+
+One global Vendor plus ClientVendor.
+
+Original roadmap:
+
+Vendor belongs to one Client.
+
+This should be challenged and confirmed.
+
+
+2. REJECT VERSUS FLAG
+
+The precise business meaning of Rejected and Flagged
+still requires confirmation.
+
+
+3. ACTUAL SIG STRUCTURE
+
+The licensed SIG structure must determine whether a
+Question belongs to one Domain or multiple Domains.
+
+
+4. ASSESSMENT TEMPLATE RELATIONSHIP
+
+The MVP currently uses Assessment.TemplateId.
+
+This may change if Assessments eventually combine
+multiple questionnaire templates.
+
+
+5. QUESTION WEIGHTS
+
+We have not finalized whether weights belong to:
+
+QuestionTemplate
+
+Domain
+
+Tier
+
+AssessmentQuestion
+
+or some combination.
+
+
+6. CUSTOM QUESTION SCORING
+
+Custom questions are outside standard SIG domain
+scoring for the MVP.
+
+We have not decided whether they are informational
+only or receive a separate score.
+
+
+7. DETAILED SCORING ENGINE
+
+The complete scoring formula, domain weighting,
+thresholds, overrides, and risk-rating calculation
+have not yet been modeled.
+
+
+========================================
+END OF CURRENT CHECKPOINT MODEL
+========================================

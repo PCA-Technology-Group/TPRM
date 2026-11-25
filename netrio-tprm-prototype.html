@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Netrio TPRM Platform — Prototype</title>
+<style>
+:root{
+  --navy:#0f2a43; --navy2:#16385a; --teal:#0ea5a6; --teal-d:#0b8788;
+  --bg:#f4f6f9; --card:#ffffff; --line:#e3e8ef; --txt:#1c2733; --mut:#64748b;
+  --crit:#c0392b; --high:#e67e22; --med:#f1c40f; --low:#27ae60; --info:#2f80ed;
+  --brand:var(--teal);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI",system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--txt);font-size:14px}
+#app{display:flex;min-height:100vh}
+/* sidebar */
+#side{width:225px;background:var(--navy);color:#cfd9e4;flex-shrink:0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+#logo{padding:18px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+#logo .nm{font-size:17px;font-weight:700;color:#fff;letter-spacing:.3px}
+#logo .sub{font-size:10.5px;color:#7f96ab;text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+#nav{flex:1;padding:10px 8px;overflow-y:auto}
+.navi{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;margin-bottom:2px;font-size:13.5px;color:#b9c7d4}
+.navi:hover{background:rgba(255,255,255,.07);color:#fff}
+.navi.on{background:var(--brand);color:#fff;font-weight:600}
+.navi .ic{width:18px;text-align:center;font-size:15px}
+.navsec{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:#5f7893;padding:14px 12px 5px}
+#sidefoot{padding:12px 16px;border-top:1px solid rgba(255,255,255,.08);font-size:11px;color:#7f96ab}
+/* topbar */
+#main{flex:1;display:flex;flex-direction:column;min-width:0}
+#top{background:#fff;border-bottom:1px solid var(--line);padding:10px 22px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:50}
+#top h1{font-size:16px;font-weight:650}
+#top .sp{flex:1}
+select,input,textarea{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--txt)}
+select:focus,input:focus,textarea:focus{outline:2px solid var(--brand);outline-offset:-1px}
+.rolebox{display:flex;align-items:center;gap:8px;background:#eef2f7;border-radius:8px;padding:5px 10px;font-size:12.5px}
+.rolebox label{color:var(--mut);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+#view{padding:22px;max-width:1280px;width:100%;margin:0 auto}
+/* cards & layout */
+.grid{display:grid;gap:14px}
+.g4{grid-template-columns:repeat(4,1fr)} .g3{grid-template-columns:repeat(3,1fr)} .g2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:1000px){.g4,.g3{grid-template-columns:repeat(2,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card h3{font-size:13px;font-weight:650;margin-bottom:10px;color:var(--txt)}
+.kpi .v{font-size:26px;font-weight:700;line-height:1.1}
+.kpi .l{font-size:12px;color:var(--mut);margin-top:3px}
+.kpi .d{font-size:11px;margin-top:6px}
+/* tables */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);padding:8px 10px;border-bottom:2px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr{cursor:pointer} tbody tr:hover{background:#f8fafc}
+tbody tr.nolink{cursor:default} tbody tr.nolink:hover{background:none}
+/* badges */
+.b{display:inline-block;padding:2.5px 9px;border-radius:20px;font-size:11px;font-weight:650;white-space:nowrap}
+.b.crit{background:#fdecea;color:var(--crit)} .b.high{background:#fdf0e3;color:#c56a10}
+.b.med{background:#fcf6da;color:#9a7d00} .b.low{background:#e8f7ee;color:#1e8449}
+.b.info{background:#e8f0fd;color:var(--info)} .b.gray{background:#eef1f5;color:var(--mut)}
+.b.teal{background:#e0f4f4;color:var(--teal-d)} .b.navy{background:#e6ebf2;color:var(--navy)}
+.tier{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:7px;font-weight:700;font-size:12px;color:#fff}
+.t1{background:var(--crit)} .t2{background:var(--high)} .t3{background:#b7950b} .t4{background:var(--low)}
+/* buttons */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--txt);font:inherit;font-weight:600;font-size:13px;cursor:pointer}
+.btn:hover{background:#f4f6f9}
+.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.pri:hover{filter:brightness(.94)}
+.btn.sm{padding:4px 10px;font-size:12px}
+.btn.ok{background:#e8f7ee;border-color:#bfe6cd;color:#1e8449}
+.btn.no{background:#fdecea;border-color:#f2c4bd;color:var(--crit)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+/* misc */
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mut{color:var(--mut)} .sm{font-size:12px} .xs{font-size:11px}
+.mb{margin-bottom:14px} .mt{margin-top:14px}
+.hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+.hd h2{font-size:18px;font-weight:700}
+.hd .sub{font-size:12.5px;color:var(--mut);margin-top:2px}
+.bar{height:8px;background:#edf1f5;border-radius:6px;overflow:hidden}
+.bar>i{display:block;height:100%;border-radius:6px}
+.pill-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.pill-tabs .pt{padding:6px 14px;border-radius:20px;border:1px solid var(--line);background:#fff;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--mut)}
+.pill-tabs .pt.on{background:var(--navy);border-color:var(--navy);color:#fff}
+/* modal & drawer */
+#ovl{position:fixed;inset:0;background:rgba(15,42,67,.45);display:none;z-index:100}
+#ovl.show{display:flex;align-items:flex-start;justify-content:center;padding:5vh 16px;overflow-y:auto}
+.modal{background:#fff;border-radius:14px;max-width:660px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal h3{font-size:16px;margin-bottom:4px}
+.modal .msub{font-size:12.5px;color:var(--mut);margin-bottom:16px}
+.fg{margin-bottom:12px}
+.fg label{display:block;font-size:12px;font-weight:650;margin-bottom:4px}
+.fg label .req{color:var(--crit)}
+.fg input,.fg select,.fg textarea{width:100%}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chks{display:flex;flex-wrap:wrap;gap:8px}
+.chks label{display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:500;background:#f4f6f9;padding:5px 10px;border-radius:7px;cursor:pointer;margin:0}
+#drawer{position:fixed;top:0;right:-580px;width:560px;max-width:95vw;height:100vh;background:#fff;box-shadow:-12px 0 40px rgba(0,0,0,.15);z-index:90;transition:right .25s;overflow-y:auto}
+#drawer.show{right:0}
+#drawer .dh{position:sticky;top:0;background:#fff;padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;z-index:5}
+#drawer .db{padding:18px 20px}
+/* stepper */
+.steps{display:flex;flex-direction:column;gap:0}
+.step{display:flex;gap:12px;position:relative;padding-bottom:16px}
+.step .dot{width:22px;height:22px;border-radius:50%;background:#e3e8ef;color:var(--mut);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;z-index:2}
+.step.done .dot{background:var(--low);color:#fff}
+.step.cur .dot{background:var(--brand);color:#fff;box-shadow:0 0 0 4px rgba(14,165,166,.18)}
+.step:not(:last-child):before{content:"";position:absolute;left:10.5px;top:22px;bottom:0;width:1.5px;background:var(--line)}
+.step .st{font-weight:650;font-size:13px}
+.step .sd{font-size:12px;color:var(--mut)}
+/* heatmap */
+.hm{display:grid;grid-template-columns:70px repeat(4,1fr);gap:5px;font-size:12px}
+.hm .hc{border-radius:8px;padding:12px 6px;text-align:center;font-weight:700;font-size:16px}
+.hm .hl{display:flex;align-items:center;font-weight:650;color:var(--mut);font-size:11px}
+.hm .hh{text-align:center;font-size:11px;color:var(--mut);font-weight:650;padding-bottom:2px}
+/* trend chart */
+.trend{display:flex;align-items:flex-end;gap:8px;height:120px;padding-top:8px}
+.trend .tb{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end}
+.trend .tbar{width:70%;max-width:38px;border-radius:5px 5px 0 0;background:var(--brand);opacity:.85}
+.trend .tl{font-size:10px;color:var(--mut)}
+/* toast */
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--navy);color:#fff;padding:11px 20px;border-radius:10px;font-size:13px;z-index:200;transition:transform .25s;box-shadow:0 8px 30px rgba(0,0,0,.3)}
+#toast.show{transform:translateX(-50%) translateY(0)}
+/* questionnaire */
+.q{border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px;background:#fff}
+.q .qd{font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--brand);font-weight:700}
+.q .qt{font-weight:600;margin:5px 0 9px;font-size:13.5px}
+.q .opts{display:flex;gap:8px;flex-wrap:wrap}
+.q .opts label{display:flex;gap:5px;align-items:center;background:#f4f6f9;padding:6px 11px;border-radius:7px;cursor:pointer;font-size:12.5px}
+.ev{margin-top:9px;padding:8px 10px;background:#f8fafc;border:1px dashed #c9d4e0;border-radius:8px;font-size:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fw{color:#fff}
+.msg{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:13px}
+.msg .mh{font-size:11px;color:var(--mut);margin-bottom:3px}
+.msg.mine{background:#e0f4f4;border-color:#bfe4e4}
+.brandbar{border-radius:12px;padding:16px 20px;color:#fff;margin-bottom:16px;display:flex;align-items:center;gap:12px}
+.wl-logo{width:36px;height:36px;border-radius:9px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px}
+.notice{background:#fdf6e3;border:1px solid #f0e0b0;border-radius:10px;padding:10px 14px;font-size:12.5px;color:#7d6608;margin-bottom:14px}
+.notice.red{background:#fdecea;border-color:#f2c4bd;color:var(--crit)}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="side">
+    <div id="logo"><div class="nm" id="logoName">NETRIO</div><div class="sub" id="logoSub">TPRM Platform</div></div>
+    <nav id="nav"></nav>
+    <div id="sidefoot">Prototype v1.0 · Internal build<br>Cyber Governance Team</div>
+  </aside>
+  <div id="main">
+    <div id="top">
+      <h1 id="pgTitle">Dashboard</h1>
+      <div class="sp"></div>
+      <div class="rolebox" id="presentPick" style="display:none"><label>Present to</label><select id="presentSel" onchange="presentClient(this.value); this.value=''"><option value="">Choose client…</option><option value="c1">Lone Star Health Partners</option><option value="c2">Crestline Financial Group</option><option value="c3">BlueSky Logistics</option></select></div>
+      <div class="rolebox" id="clientPick" style="display:none"><label>Client</label><select id="clientSel" onchange="setClient(this.value)"></select></div>
+      <div class="rolebox"><label>Role</label>
+        <select id="roleSel" onchange="setRole(this.value)">
+          <option value="nadmin">Netrio Admin</option>
+          <option value="nanalyst">Netrio Analyst</option>
+          <option value="cadmin">Client Admin</option>
+          <option value="cviewer">Client Viewer</option>
+          <option value="vendor">Vendor Contact</option>
+        </select>
+      </div>
+    </div>
+    <div id="view"></div>
+  </div>
+</div>
+<div id="ovl" onclick="if(event.target===this)closeModal()"><div class="modal" id="modalBox"></div></div>
+<div id="drawer"></div>
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   NETRIO TPRM PLATFORM — Interactive Prototype (mock data)
+   ============================================================ */
+
+const SIG_DOMAINS = ["Access Control","Application Management","Artificial Intelligence (AI)","Asset and Information Management","Cloud Services","Compliance Management","Cybersecurity Incident Management","Endpoint Security","Enterprise Risk Management","Environmental, Social, Governance (ESG)","Human Resources Security","Information Assurance","IT Operations Management","Network Security","Nth Party Management","Operational Resilience","Physical and Environmental Security","Privacy Management","Server Security","Supply Chain Risk Management (SCRM)","Threat Management"];
+
+const FRAMEWORKS = ["ISO 27001:2022","NIST CSF 2.0","NIST SP 800-53r5","NIST SP 800-171r3","ISO/IEC 42001:2023","CIS Controls v8","CMMC 2.0","HIPAA","EU GDPR","EU NIS 2","DORA","NYDFS 500","FedRAMP","FFIEC","CSA CCM v4","PCI DSS 4.0","NERC"];
+
+// which SIG domains apply per tier (configurable in Admin > Config)
+let TIER_SCOPE = {1:[...Array(21).keys()], 2:[0,1,3,4,5,6,7,8,11,12,13,15,16,17,18,20], 3:[0,4,5,6,7,13,17,20], 4:[0,6,17]};
+
+// weighted scoring model (configurable)
+let SCORING = {
+  categories:[
+    {id:"ds", name:"Data Security", weight:30},
+    {id:"bc", name:"Business Continuity", weight:20},
+    {id:"cm", name:"Compliance", weight:25},
+    {id:"fs", name:"Financial Stability", weight:10},
+    {id:"op", name:"Operational", weight:15}
+  ],
+  thresholds:{low:85, medium:70, high:50} // >=low → Low risk, etc.
+};
+
+const SERVICE_CATS = ["Cloud / SaaS","Data Center & Hosting","Software Development","Payroll / HR","Financial Services","Facilities","Logistics","Marketing","Legal","Managed Security","Telecom","Hardware Supplier"];
+
+const ANALYSTS = ["J. Alvarez","P. Whitfield","S. Nakamura"];
+
+const CLIENTS = [
+  {id:"c1", name:"Lone Star Health Partners", short:"LSH", industry:"Healthcare", entTotal:40, entUsed:31, entPeriod:"Contract year (resets Mar 1)", whiteLabel:true, wlColor:"#7d3c98", notif:"hybrid", frameworks:["HIPAA","NIST CSF 2.0","ISO 27001:2022"], ccClientOnVendorEmails:true, ccAnalystOnClientEmails:true},
+  {id:"c2", name:"Crestline Financial Group", short:"CFG", industry:"Financial Services", entTotal:60, entUsed:22, entPeriod:"Calendar year", whiteLabel:false, wlColor:"#0ea5a6", notif:"client-direct", frameworks:["NYDFS 500","FFIEC","PCI DSS 4.0","NIST CSF 2.0"], ccClientOnVendorEmails:true, ccAnalystOnClientEmails:false},
+  {id:"c3", name:"BlueSky Logistics", short:"BSL", industry:"Transportation", entTotal:25, entUsed:24, entPeriod:"Contract year (resets Sep 1)", whiteLabel:false, wlColor:"#0ea5a6", notif:"netrio-managed", frameworks:["ISO 27001:2022","CIS Controls v8"], ccClientOnVendorEmails:false, ccAnalystOnClientEmails:true}
+];
+
+// assessment types & whether each consumes a client's contracted entitlement (configurable — Platform Config > Assessment Types)
+let ASSESS_TYPES = [
+  {id:"full_sig", name:"Full SIG Assessment", desc:"Complete SIG questionnaire across tier-scoped domains", countsToward:true},
+  {id:"doc_review", name:"Documentation Review", desc:"Lightweight review of submitted policy/evidence docs in lieu of a full questionnaire — e.g., used when a full SIG is cancelled and replaced", countsToward:true},
+  {id:"pulse", name:"Pulse Survey", desc:"Short recurring check-in (3–5 questions) run between full assessment cycles", countsToward:false},
+  {id:"client_custom", name:"Client-Uploaded Questionnaire", desc:"Client's own questionnaire format in place of the Netrio SIG", countsToward:true}
+];
+function assessTypeName(id){ return (ASSESS_TYPES.find(t=>t.id===id)||ASSESS_TYPES[0]).name; }
+function typeBadge(id){ const m={full_sig:"navy",doc_review:"info",pulse:"teal",client_custom:"gray"}; return `<span class="b ${m[id]||"gray"}">${assessTypeName(id||"full_sig")}</span>`; }
+
+const STATUSES = ["Pending Onboarding","Active","Under Assessment","Assessment Complete","Inactive / Offboarded"];
+const DATA_TYPES = ["PII","PHI","Financial","Confidential","Other"];
+
+let VENDORS = [
+  {id:"v1", clientId:"c1", name:"MedCloud Systems", contact:"Rita Okafor", email:"rokafor@medcloud.io", cat:"Cloud / SaaS", dataTypes:["PHI","PII"], tier:1, status:"Under Assessment", contractEnd:"2026-09-30", score:62, rating:"High", lastAssess:"2025-07-10", website:"medcloud.io", desc:"EHR hosting and clinical data platform"},
+  {id:"v2", clientId:"c1", name:"PayPro Services", contact:"Dan Whitley", email:"dwhitley@paypro.com", cat:"Payroll / HR", dataTypes:["PII","Financial"], tier:2, status:"Assessment Complete", contractEnd:"2027-01-15", score:88, rating:"Low", lastAssess:"2026-05-02", website:"paypro.com", desc:"Payroll processing"},
+  {id:"v3", clientId:"c1", name:"Sterile Supply Co", contact:"Meg Liu", email:"mliu@sterilesupply.com", cat:"Hardware Supplier", dataTypes:["Confidential"], tier:3, status:"Active", contractEnd:"2026-08-12", score:74, rating:"Medium", lastAssess:"2025-11-20", website:"sterilesupply.com", desc:"Medical supply logistics"},
+  {id:"v4", clientId:"c1", name:"Archview Legal", contact:"T. Broussard", email:"tb@archviewlegal.com", cat:"Legal", dataTypes:["PHI","Confidential"], tier:2, status:"Under Assessment", contractEnd:"2026-12-01", score:null, rating:null, lastAssess:null, website:"archviewlegal.com", desc:"Outside counsel — malpractice"},
+  {id:"v5", clientId:"c1", name:"NightWatch MDR", contact:"C. Ferreira", email:"cf@nightwatchsec.com", cat:"Managed Security", dataTypes:["Confidential"], tier:1, status:"Assessment Complete", contractEnd:"2027-03-01", score:91, rating:"Low", lastAssess:"2026-06-11", website:"nightwatchsec.com", desc:"24/7 managed detection & response"},
+  {id:"v6", clientId:"c2", name:"LedgerLink Core", contact:"A. Osei", email:"aosei@ledgerlink.com", cat:"Financial Services", dataTypes:["Financial","PII"], tier:1, status:"Under Assessment", contractEnd:"2026-07-28", score:44, rating:"Critical", lastAssess:"2025-06-30", website:"ledgerlink.com", desc:"Core banking ledger platform"},
+  {id:"v7", clientId:"c2", name:"Quill Print & Mail", contact:"B. Hendricks", email:"bh@quillpm.com", cat:"Marketing", dataTypes:["PII"], tier:3, status:"Active", contractEnd:"2027-02-14", score:79, rating:"Medium", lastAssess:"2026-01-18", website:"quillpm.com", desc:"Statement printing & mailing"},
+  {id:"v8", clientId:"c2", name:"Vaulted Data Centers", contact:"K. Iyer", email:"kiyer@vaulteddc.com", cat:"Data Center & Hosting", dataTypes:["Financial","Confidential"], tier:1, status:"Assessment Complete", contractEnd:"2028-05-10", score:86, rating:"Low", lastAssess:"2026-04-22", website:"vaulteddc.com", desc:"Colocation & DR facilities"},
+  {id:"v9", clientId:"c2", name:"BrightHire Staffing", contact:"L. Moreau", email:"lm@brighthire.net", cat:"Payroll / HR", dataTypes:["PII"], tier:4, status:"Active", contractEnd:null, score:82, rating:"Medium", lastAssess:"2025-09-04", website:"brighthire.net", desc:"Contract staffing"},
+  {id:"v10", clientId:"c3", name:"RouteWise TMS", contact:"G. Santos", email:"gs@routewise.app", cat:"Cloud / SaaS", dataTypes:["Confidential","PII"], tier:2, status:"Under Assessment", contractEnd:"2026-10-05", score:null, rating:null, lastAssess:"2025-08-15", website:"routewise.app", desc:"Transportation management SaaS"},
+  {id:"v11", clientId:"c3", name:"Pallet Pros", contact:"E. Novak", email:"en@palletpros.com", cat:"Logistics", dataTypes:["Other"], tier:4, status:"Active", contractEnd:"2026-11-30", score:90, rating:"Low", lastAssess:"2025-12-02", website:"palletpros.com", desc:"Pallet & packaging supplier"},
+  {id:"v12", clientId:"c3", name:"TelNet Communications", contact:"F. Duarte", email:"fd@telnetcomm.com", cat:"Telecom", dataTypes:["Confidential"], tier:2, status:"Pending Onboarding", contractEnd:"2027-04-01", score:null, rating:null, lastAssess:null, website:"telnetcomm.com", desc:"Fleet SIM & connectivity"}
+];
+
+// assessment stages per PRD 3.5
+const STAGES = ["Initiation","Questionnaire Assignment","Distribution","Vendor Response","Netrio Review","Scoring","Findings & Recommendations","Client Review","Closure"];
+
+let ASSESSMENTS = [
+  {id:"a1", vendorId:"v1", clientId:"c1", trigger:"Automatic — Tier-Based", cycle:"Periodic Reassessment", stage:4, questionnaire:"Netrio SIG 2026", sigVersion:"2026.1", analyst:"J. Alvarez", initiated:"2026-06-01", due:"2026-07-01", overdue:true, score:null, respMethod:"Portal Login", type:"full_sig"},
+  {id:"a2", vendorId:"v4", clientId:"c1", trigger:"Manual — Client", cycle:"Initial Onboarding Assessment", stage:3, questionnaire:"Netrio SIG 2026 (Tier 2 scope)", sigVersion:"2026.1", analyst:"P. Whitfield", initiated:"2026-06-20", due:"2026-07-20", overdue:false, score:null, respMethod:"Email Link (No Login)", type:"full_sig"},
+  {id:"a3", vendorId:"v6", clientId:"c2", trigger:"Event-Driven", cycle:"Event-Driven Reassessment", stage:6, questionnaire:"Netrio SIG 2026", sigVersion:"2026.1", analyst:"J. Alvarez", initiated:"2026-05-15", due:"2026-06-15", overdue:true, score:44, event:"Vendor disclosed security incident (May 2026)", respMethod:"Portal Login", type:"full_sig"},
+  {id:"a4", vendorId:"v10", clientId:"c3", trigger:"Automatic — Contract Date", cycle:"Periodic Reassessment", stage:2, questionnaire:"Client questionnaire: BSL-VendorSec-v3.xlsx", sigVersion:"—", analyst:"S. Nakamura", initiated:"2026-07-01", due:"2026-08-01", overdue:false, score:null, respMethod:"Email Link (No Login)", type:"client_custom"},
+  {id:"a5", vendorId:"v5", clientId:"c1", trigger:"Manual — Netrio Staff", cycle:"Ad Hoc / On Demand", stage:9, questionnaire:"Netrio SIG 2026", sigVersion:"2026.1", analyst:"P. Whitfield", initiated:"2026-05-10", due:"2026-06-10", overdue:false, score:91, completed:"2026-06-11", respMethod:"Portal Login", type:"full_sig"},
+  {id:"a6", vendorId:"v8", clientId:"c2", trigger:"Automatic — Tier-Based", cycle:"Periodic Reassessment", stage:9, questionnaire:"Netrio SIG 2026", sigVersion:"2026.1", analyst:"J. Alvarez", initiated:"2026-03-20", due:"2026-04-20", overdue:false, score:86, completed:"2026-04-22", respMethod:"Portal Login", type:"full_sig"},
+  {id:"a7", vendorId:"v2", clientId:"c1", trigger:"Automatic — Tier-Based", cycle:"Periodic Reassessment", stage:9, questionnaire:"Netrio SIG 2025", sigVersion:"2025.2", analyst:"S. Nakamura", initiated:"2026-04-01", due:"2026-05-01", overdue:false, score:88, completed:"2026-05-02", respMethod:"Email Link (No Login)", type:"full_sig"}
+];
+
+// sample questionnaire for the active demo assessment (a1 — MedCloud)
+let QUESTIONS = [
+  {id:"q1", domain:"Access Control", cat:"ds", text:"Is multi-factor authentication enforced for all remote and privileged access?", frameworks:["NIST CSF 2.0","ISO 27001:2022","HIPAA"], answer:"Yes", evidence:{name:"MFA_Policy_v4.pdf", expires:"2027-02-01"}, review:"accepted", note:""},
+  {id:"q2", domain:"Access Control", cat:"ds", text:"Are user access rights reviewed at least quarterly, with documented sign-off?", frameworks:["ISO 27001:2022","NYDFS 500"], answer:"Partial", evidence:{name:"Q1_Access_Review.xlsx", expires:"2026-07-15"}, review:"flagged", note:"Review covers admins only — request full user population review."},
+  {id:"q3", domain:"Cloud Services", cat:"ds", text:"Is customer data logically segregated from other tenants in the production environment?", frameworks:["CSA CCM v4","FedRAMP"], answer:"Yes", evidence:{name:"SOC2_TypeII_2025.pdf", expires:"2026-08-30"}, review:"accepted", note:""},
+  {id:"q4", domain:"Cybersecurity Incident Management", cat:"op", text:"Does the organization maintain a tested incident response plan with defined client notification timelines?", frameworks:["NIST CSF 2.0","HIPAA","EU NIS 2"], answer:"Yes", evidence:{name:"IRP_2026_TabletopResults.pdf", expires:"2027-01-10"}, review:"pending", note:""},
+  {id:"q5", domain:"Operational Resilience", cat:"bc", text:"Are RTO/RPO targets defined and validated through at least annual DR testing?", frameworks:["DORA","FFIEC","ISO 27001:2022"], answer:"No", evidence:null, review:"rejected", note:"No DR test evidence provided for the last 18 months."},
+  {id:"q6", domain:"Compliance Management", cat:"cm", text:"Does the organization hold current third-party attestations (SOC 2, ISO 27001, HITRUST) covering in-scope services?", frameworks:["ISO 27001:2022","HIPAA"], answer:"Yes", evidence:{name:"SOC2_TypeII_2025.pdf", expires:"2026-08-30"}, review:"accepted", note:""},
+  {id:"q7", domain:"Privacy Management", cat:"cm", text:"Is a data processing agreement (DPA/BAA) executed covering all regulated data handled?", frameworks:["HIPAA","EU GDPR"], answer:"Partial", evidence:{name:"BAA_signed_2023.pdf", expires:"2026-06-20"}, review:"flagged", note:"BAA references superseded entity name — needs re-execution."},
+  {id:"q8", domain:"Enterprise Risk Management", cat:"fs", text:"Can the organization demonstrate financial viability (audited financials or equivalent) for the past 2 fiscal years?", frameworks:["FFIEC","Interagency TPRM Guidance"], answer:"Yes", evidence:{name:"FY25_Audited_Financials.pdf", expires:"2027-04-01"}, review:"pending", note:""},
+  {id:"q9", domain:"Nth Party Management", cat:"op", text:"Is there a documented process to assess and monitor critical subcontractors (4th parties)?", frameworks:["DORA","Interagency TPRM Guidance"], answer:"No", evidence:null, review:"pending", note:""},
+  {id:"q10", domain:"Threat Management", cat:"ds", text:"Is external attack surface / vulnerability scanning performed at least monthly with remediation SLAs?", frameworks:["CIS Controls v8","NIST SP 800-53r5"], answer:"Yes", evidence:{name:"Vuln_Mgmt_Standard.pdf", expires:"2026-09-12"}, review:"accepted", note:""},
+  {id:"q10b", domain:"Endpoint Security", cat:"ds", text:"Is endpoint detection and response (EDR) deployed and centrally monitored across all endpoints accessing client data?", frameworks:["CIS Controls v8","NIST CSF 2.0"], answer:"Yes", evidence:{name:"EDR_Coverage_Report.pdf", expires:"2026-12-15"}, review:"accepted", note:""},
+  {id:"q11", domain:"Application Management", cat:"ds", text:"Is a secure software development lifecycle (SSDLC) followed, including code review and static/dynamic testing prior to release?", frameworks:["NIST SP 800-53r5","CIS Controls v8"], answer:"Yes", evidence:{name:"SSDLC_Standard.pdf", expires:"2026-12-01"}, review:"accepted", note:""},
+  {id:"q12", domain:"Artificial Intelligence (AI)", cat:"ds", text:"Are AI/ML models used in service delivery governed by a documented AI risk management program (e.g., bias testing, model monitoring)?", frameworks:["ISO/IEC 42001:2023","NIST AI 100-1"], answer:"Partial", evidence:{name:"AI_Governance_Draft.pdf", expires:"2026-07-20"}, review:"flagged", note:"Draft policy only — request the approved / final version before acceptance."},
+  {id:"q13", domain:"Asset and Information Management", cat:"ds", text:"Is there a maintained inventory of information assets and a data classification scheme covering systems that process client data?", frameworks:["ISO 27001:2022","NIST CSF 2.0"], answer:"Yes", evidence:{name:"Asset_Inventory_2026.xlsx", expires:"2027-01-15"}, review:"accepted", note:""},
+  {id:"q14", domain:"Environmental, Social, Governance (ESG)", cat:"cm", text:"Does the organization publish an annual ESG or sustainability report addressing data center energy use and labor practices?", frameworks:["EU NIS 2"], answer:"No", evidence:null, review:"pending", note:""},
+  {id:"q15", domain:"Human Resources Security", cat:"op", text:"Are background checks and security awareness training required for all personnel with access to client data?", frameworks:["ISO 27001:2022","HIPAA"], answer:"Yes", evidence:{name:"HR_Security_Policy.pdf", expires:"2027-02-10"}, review:"accepted", note:""},
+  {id:"q16", domain:"Information Assurance", cat:"ds", text:"Is an independent internal audit or QA function responsible for validating control effectiveness at least annually?", frameworks:["NIST SP 800-53r5"], answer:"Partial", evidence:{name:"Internal_Audit_Charter.pdf", expires:"2026-09-01"}, review:"flagged", note:"Charter provided but no evidence of a completed 2026 audit cycle — request the report."},
+  {id:"q17", domain:"IT Operations Management", cat:"op", text:"Are change management procedures documented and enforced for production system changes?", frameworks:["CIS Controls v8","ISO 27001:2022"], answer:"Yes", evidence:{name:"Change_Mgmt_SOP.pdf", expires:"2026-11-05"}, review:"accepted", note:""},
+  {id:"q18", domain:"Network Security", cat:"ds", text:"Is network traffic segmented (e.g., DMZ, VLANs) between production, corporate, and client-facing environments?", frameworks:["NIST SP 800-53r5","CIS Controls v8"], answer:"Yes", evidence:{name:"Network_Architecture_Diagram.pdf", expires:"2027-03-01"}, review:"accepted", note:""},
+  {id:"q19", domain:"Physical and Environmental Security", cat:"bc", text:"Are data center facilities protected by badge access, CCTV, and environmental controls (fire suppression, climate control)?", frameworks:["ISO 27001:2022","FedRAMP"], answer:"Yes", evidence:{name:"Facility_Security_Cert.pdf", expires:"2026-10-20"}, review:"accepted", note:""},
+  {id:"q20", domain:"Server Security", cat:"ds", text:"Are servers hardened per a documented baseline (e.g., CIS Benchmarks) prior to production deployment?", frameworks:["CIS Controls v8"], answer:"No", evidence:null, review:"rejected", note:"No hardening baseline or evidence of CIS Benchmark application provided."},
+  {id:"q21", domain:"Supply Chain Risk Management (SCRM)", cat:"op", text:"Do you use third-party subcontractors (4th parties) to help deliver this specific service to Netrio's client?", frameworks:["DORA","Interagency TPRM Guidance"], answer:"Yes", evidence:null, review:"pending", note:""},
+  {id:"q22", domain:"Supply Chain Risk Management (SCRM)", cat:"op", showIf:{q:"q21", eq:"Yes"}, text:"Follow-up: is there a documented process to assess, monitor, and flag material changes among the subcontractors used for this engagement?", frameworks:["DORA","Interagency TPRM Guidance"], answer:"Partial", evidence:{name:"Subcontractor_Registry.xlsx", expires:"2026-08-01"}, review:"flagged", note:"Registry provided but lacks a defined monitoring cadence — request policy."}
+];
+
+let EVIDENCE = [
+  {vendor:"MedCloud Systems", client:"c1", doc:"BAA_signed_2023.pdf", expires:"2026-06-20", status:"Expired"},
+  {vendor:"MedCloud Systems", client:"c1", doc:"Q1_Access_Review.xlsx", expires:"2026-07-15", status:"Expiring soon"},
+  {vendor:"MedCloud Systems", client:"c1", doc:"SOC2_TypeII_2025.pdf", expires:"2026-08-30", status:"Expiring soon"},
+  {vendor:"LedgerLink Core", client:"c2", doc:"PenTest_Report_2024.pdf", expires:"2026-05-30", status:"Expired"},
+  {vendor:"Vaulted Data Centers", client:"c2", doc:"SOC2_TypeII_2026.pdf", expires:"2027-04-22", status:"Current"},
+  {vendor:"NightWatch MDR", client:"c1", doc:"ISO27001_Cert.pdf", expires:"2027-06-11", status:"Current"},
+  {vendor:"RouteWise TMS", client:"c3", doc:"CyberIns_Certificate.pdf", expires:"2026-07-30", status:"Expiring soon"}
+];
+
+let AUDIT = [
+  {ts:"2026-07-03 16:42", user:"J. Alvarez (Netrio Analyst)", act:"Rejected response Q5 (DR testing) on assessment A-2026-041 — MedCloud Systems", type:"netrio"},
+  {ts:"2026-07-03 14:10", user:"cadmin@lonestarhealth.com (Client Admin)", act:"Requested new assessment for Archview Legal", type:"client"},
+  {ts:"2026-07-02 09:55", user:"System", act:"Auto-trigger: contract renewal T-90 assessment scheduled for LedgerLink Core (renewal 2026-07-28)", type:"system"},
+  {ts:"2026-07-01 11:20", user:"P. Whitfield (Netrio Analyst)", act:"Distributed questionnaire to Archview Legal via secure email link (expires in 14 days)", type:"netrio"},
+  {ts:"2026-06-30 08:15", user:"System", act:"Reminder #2 sent to MedCloud Systems — questionnaire overdue", type:"system"},
+  {ts:"2026-06-28 15:03", user:"Netrio Admin", act:"Updated Tier 2 SIG domain scope: added Nth Party Management", type:"netrio"},
+  {ts:"2026-06-27 10:47", user:"cadmin@blueskylogistics.com (Client Admin)", act:"Uploaded client questionnaire BSL-VendorSec-v3.xlsx", type:"client"},
+  {ts:"2026-06-26 09:30", user:"System", act:"Entitlement alert: BlueSky Logistics at 96% of contracted assessments", type:"system"}
+];
+
+let MESSAGES = [
+  {from:"Client Admin (LSH)", mine:false, ts:"Jul 2, 10:14", text:"Can we expedite the Archview Legal assessment? Contract signature is pending our review."},
+  {from:"P. Whitfield (Netrio)", mine:true, ts:"Jul 2, 11:02", text:"Yes — questionnaire went out yesterday with a 14-day window. We'll prioritize review as responses land and target findings by Jul 18."},
+  {from:"Client Admin (LSH)", mine:false, ts:"Jul 2, 11:20", text:"Perfect, thank you."}
+];
+
+/* ---------- state ---------- */
+let state = {role:"nadmin", clientId:"c1", view:"dashboard", assessId:"a1", pillTab:{}, presenting:false, presentReturn:null};
+
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const client = id => CLIENTS.find(c=>c.id===(id||state.clientId));
+const vendor = id => VENDORS.find(v=>v.id===id);
+const esc = s => String(s??"").replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function ratingOf(score){ if(score==null) return null; const t=SCORING.thresholds; return score>=t.low?"Low":score>=t.medium?"Medium":score>=t.high?"High":"Critical"; }
+function rb(r){ if(!r) return '<span class="b gray">Not scored</span>'; const cls={Critical:"crit",High:"high",Medium:"med",Low:"low"}[r]; return `<span class="b ${cls}">${r}</span>`; }
+function tierBadge(t){ return `<span class="tier t${t}" title="Tier ${t}">${t}</span>`; }
+function statusBadge(s){ const m={"Pending Onboarding":"gray","Active":"teal","Under Assessment":"info","Assessment Complete":"low","Inactive / Offboarded":"gray"}; return `<span class="b ${m[s]||"gray"}">${s}</span>`; }
+function stageBadge(a){ if(a.cancelled) return '<span class="b gray">Cancelled — replaced</span>'; if(a.stage>=9) return '<span class="b low">Complete</span>'; return `<span class="b ${a.overdue?"crit":"info"}">${a.overdue?"⚠ Overdue · ":""}Stage ${a.stage}: ${STAGES[a.stage-1]}</span>`; }
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),2600); }
+function log(act,type){ AUDIT.unshift({ts:"2026-07-04 "+new Date().toTimeString().slice(0,5), user:roleName()+" (you)", act, type: type || (isNetrio()?"netrio":isClient()?"client":"vendor")}); }
+function actorBadge(t){ const m={system:["gray","Automated"],netrio:["teal","Netrio"],client:["info","Client"],vendor:["high","Vendor"]}; const x=m[t]||["gray","—"]; return `<span class="b ${x[0]}">${x[1]}</span>`; }
+function roleName(){ return {nadmin:"Netrio Admin",nanalyst:"Netrio Analyst",cadmin:"Client Admin",cviewer:"Client Viewer",vendor:"Vendor Contact"}[state.role]; }
+function isNetrio(){ return state.role==="nadmin"||state.role==="nanalyst"; }
+function isClient(){ return state.role==="cadmin"||state.role==="cviewer"; }
+function scoreColor(s){ if(s==null) return "#9aa8b5"; const t=SCORING.thresholds; return s>=t.low?"var(--low)":s>=t.medium?"#b7950b":s>=t.high?"var(--high)":"var(--crit)"; }
+function openModal(html){ $("modalBox").innerHTML=html; $("ovl").classList.add("show"); }
+function closeModal(){ $("ovl").classList.remove("show"); }
+function openDrawer(html){ $("drawer").innerHTML=html; $("drawer").classList.add("show"); }
+function closeDrawer(){ $("drawer").classList.remove("show"); }
+
+/* ---------- navigation / role ---------- */
+const NAVS = {
+  netrio:[
+    {sec:"Operations"},
+    {id:"dashboard", ic:"◧", label:"Dashboard"},
+    {id:"vendors", ic:"▤", label:"Vendors"},
+    {id:"assessments", ic:"✓", label:"Assessments"},
+    {id:"review", ic:"☰", label:"Questionnaire Review"},
+    {sec:"Insight"},
+    {id:"reports", ic:"▦", label:"Reports"},
+    {sec:"Administration"},
+    {id:"config", ic:"⚙", label:"Platform Config", admin:true},
+    {id:"clients", ic:"◫", label:"Clients & Entitlements", admin:true},
+    {id:"audit", ic:"◷", label:"Audit Log", admin:true}
+  ],
+  client:[
+    {sec:"My Program"},
+    {id:"pdash", ic:"◧", label:"Dashboard"},
+    {id:"pvendors", ic:"▤", label:"My Vendors"},
+    {id:"passess", ic:"✓", label:"Assessments"},
+    {id:"preports", ic:"▦", label:"Reports"},
+    {sec:"Account"},
+    {id:"pmsg", ic:"✉", label:"Messages"},
+    {id:"psettings", ic:"⚙", label:"Settings & Users", admin:true}
+  ],
+  vendor:[
+    {sec:"Your Tasks"},
+    {id:"vq", ic:"☰", label:"Questionnaire"},
+    {id:"vev", ic:"▣", label:"My Evidence"}
+  ]
+};
+
+function renderNav(){
+  const set = isNetrio()?NAVS.netrio : isClient()?NAVS.client : NAVS.vendor;
+  $("nav").innerHTML = set.filter(n=>{
+    if(n.admin && state.role==="nanalyst") return n.id!=="config" ? false : false;
+    if(n.admin && state.role==="cviewer") return false;
+    return true;
+  }).map(n=> n.sec ? `<div class="navsec">${n.sec}</div>`
+    : `<div class="navi ${state.view===n.id?"on":""}" onclick="go('${n.id}')"><span class="ic">${n.ic}</span>${n.label}</div>`).join("");
+}
+
+function applyBranding(){
+  const c = client();
+  const wl = isClient() && c.whiteLabel;
+  document.documentElement.style.setProperty("--brand", wl? c.wlColor : "#0ea5a6");
+  $("logoName").textContent = wl? c.name.toUpperCase() : "NETRIO";
+  $("logoSub").textContent = wl? "Vendor Risk Portal · powered by Netrio" : "TPRM Platform";
+}
+
+function setRole(r){
+  state.role=r;
+  state.presenting=false; state.presentReturn=null;
+  state.view = isNetrio()?"dashboard" : isClient()?"pdash" : "vq";
+  $("clientPick").style.display = isClient()?"flex":"none";
+  if(isClient()){ $("clientSel").innerHTML = CLIENTS.map(c=>`<option value="${c.id}" ${c.id===state.clientId?"selected":""}>${c.name}</option>`).join(""); }
+  applyBranding(); render();
+}
+function setClient(id){ state.clientId=id; applyBranding(); render(); }
+function go(v){ state.view=v; render(); }
+
+function presentClient(id){
+  if(!id) return;
+  state.presentReturn = {role: state.role, view: state.view};
+  state.presenting = true;
+  state.clientId = id;
+  state.role = "cadmin";
+  state.view = "pdash";
+  $("clientPick").style.display="flex";
+  $("clientSel").innerHTML = CLIENTS.map(c=>`<option value="${c.id}" ${c.id===id?"selected":""}>${c.name}</option>`).join("");
+  applyBranding(); render();
+}
+function exitPresentation(){
+  const r = state.presentReturn || {role:"nadmin", view:"dashboard"};
+  state.presenting=false; state.presentReturn=null;
+  state.role = r.role; state.view = r.view;
+  $("roleSel").value = r.role;
+  $("clientPick").style.display="none";
+  applyBranding(); render();
+}
+
+function render(){
+  renderNav();
+  const titles={dashboard:"Netrio Operations Dashboard",vendors:"Vendor Portfolio",assessments:"Assessments",review:"Questionnaire Review",reports:"Reports",config:"Platform Configuration",clients:"Clients & Entitlements",audit:"Audit Log",pdash:"Client Dashboard",pvendors:"My Vendors",passess:"Assessments",preports:"Reports",pmsg:"Messages",psettings:"Settings & Users",vq:"Vendor Questionnaire",vev:"My Evidence"};
+  $("pgTitle").textContent = titles[state.view]||"";
+  const fn = VIEWS[state.view]; $("view").innerHTML = fn?fn():"";
+  $("presentPick").style.display = (isNetrio() && !state.presenting) ? "flex":"none";
+  window.scrollTo(0,0);
+}
+
+/* ---------- shared components ---------- */
+function heatmap(vendors){
+  const ratings=["Critical","High","Medium","Low"];
+  const colors={Critical:"#fdecea",High:"#fdf0e3",Medium:"#fcf6da",Low:"#e8f7ee"};
+  const tcolors={Critical:"var(--crit)",High:"#c56a10",Medium:"#9a7d00",Low:"#1e8449"};
+  let html='<div class="hm"><div></div>'+ratings.map(r=>`<div class="hh">${r}</div>`).join("");
+  for(let t=1;t<=4;t++){
+    html+=`<div class="hl">Tier ${t}</div>`;
+    ratings.forEach(r=>{
+      const n=vendors.filter(v=>v.tier===t&&v.rating===r).length;
+      html+=`<div class="hc" style="background:${n?colors[r]:"#f6f8fa"};color:${n?tcolors[r]:"#c3ccd6"}">${n||"·"}</div>`;
+    });
+  }
+  return html+"</div>";
+}
+
+function trendChart(points, max=100){
+  return `<div class="trend">${points.map(p=>`<div class="tb"><div class="tbar" style="height:${p.v/max*100}%;background:${scoreColor(p.v)}"></div><div class="tl">${p.l}</div></div>`).join("")}</div><div class="xs mut mt" style="margin-top:6px">Average vendor risk score (higher = lower risk)</div>`;
+}
+
+function entitlementCard(c, compact){
+  const pct = Math.round(c.entUsed/c.entTotal*100);
+  const col = pct>=100?"var(--crit)":pct>=80?"var(--high)":"var(--brand)";
+  return `<div class="card">
+    <h3>Assessment Entitlement ${compact?`— ${c.short}`:""}</h3>
+    <div class="row" style="justify-content:space-between"><div><span style="font-size:22px;font-weight:700">${c.entUsed}</span> <span class="mut">of ${c.entTotal} used</span></div><span class="b ${pct>=100?"crit":pct>=80?"high":"teal"}">${pct}%</span></div>
+    <div class="bar mt" style="margin-top:10px"><i style="width:${Math.min(pct,100)}%;background:${col}"></i></div>
+    <div class="xs mut" style="margin-top:8px">${c.entPeriod} · ${pct>=100?"Limit reached — contact Netrio to expand your contract":pct>=80?"Approaching limit — alerts sent at 80%":"Within entitlement"}</div>
+  </div>`;
+}
+
+/* ============================================================
+   VIEWS
+   ============================================================ */
+const VIEWS = {};
+
+/* ---------- NETRIO DASHBOARD ---------- */
+VIEWS.dashboard = () => {
+  const scoped = state.role==="nanalyst" ? VENDORS.filter(v=>["c1","c2"].includes(v.clientId)) : VENDORS;
+  const open = ASSESSMENTS.filter(a=>a.stage<9);
+  const overdue = open.filter(a=>a.overdue);
+  const expiring = EVIDENCE.filter(e=>e.status!=="Current");
+  const highRisk = scoped.filter(v=>v.rating==="Critical"||v.rating==="High");
+  return `
+  ${state.role==="nanalyst"?'<div class="notice">You are viewing as <b>Netrio Analyst</b> — scoped to your assigned clients (Lone Star Health, Crestline Financial). Admin-only areas are hidden.</div>':""}
+  <div class="grid g4 mb">
+    <div class="card kpi"><div class="v">${scoped.length}</div><div class="l">Vendors under management</div><div class="d mut">across ${state.role==="nanalyst"?2:CLIENTS.length} client${state.role==="nanalyst"?"s":"s"}</div></div>
+    <div class="card kpi"><div class="v" style="color:var(--crit)">${highRisk.length}</div><div class="l">Critical / High risk vendors</div><div class="d"><span class="b crit">Needs attention</span></div></div>
+    <div class="card kpi"><div class="v" style="color:${overdue.length?"var(--high)":"var(--low)"}">${overdue.length}</div><div class="l">Overdue assessments</div><div class="d mut">${open.length} in progress total</div></div>
+    <div class="card kpi"><div class="v" style="color:var(--high)">${expiring.length}</div><div class="l">Evidence expiring / expired</div><div class="d mut">next 30 days, all clients</div></div>
+  </div>
+  <div class="grid g2 mb">
+    <div class="card"><h3>Vendor Risk Heatmap — Tier × Rating</h3>${heatmap(scoped)}</div>
+    <div class="card"><h3>Risk Trend — Portfolio Average</h3>${trendChart([{l:"Feb",v:71},{l:"Mar",v:73},{l:"Apr",v:76},{l:"May",v:74},{l:"Jun",v:72},{l:"Jul",v:75}])}</div>
+  </div>
+  <div class="grid g2 mb">
+    <div class="card"><h3>Assessment Queue by Analyst</h3><table><thead><tr><th>Analyst</th><th>Open</th><th>Overdue</th><th>Load</th></tr></thead><tbody>
+      ${ANALYSTS.map(an=>{const mine=open.filter(a=>a.analyst===an);const od=mine.filter(a=>a.overdue).length;const w=mine.length/open.length*100;
+        return `<tr class="nolink"><td><b>${an}</b></td><td>${mine.length}</td><td>${od?`<span class="b crit">${od}</span>`:'<span class="mut">—</span>'}</td><td style="width:40%"><div class="bar"><i style="width:${w}%;background:var(--brand)"></i></div></td></tr>`;}).join("")}
+    </tbody></table></div>
+    <div class="card"><h3>Evidence Expiration Alerts</h3><table><thead><tr><th>Vendor</th><th>Document</th><th>Expires</th><th>Status</th></tr></thead><tbody>
+      ${expiring.map(e=>`<tr class="nolink"><td>${e.vendor}</td><td class="sm">${e.doc}</td><td class="sm">${e.expires}</td><td><span class="b ${e.status==="Expired"?"crit":"high"}">${e.status}</span></td></tr>`).join("")}
+    </tbody></table></div>
+  </div>
+  <div class="card"><div class="hd" style="margin-bottom:8px"><h3 style="margin:0">Overdue & In-Progress Assessments — All Clients</h3><button class="btn sm pri" onclick="newAssessmentModal()">+ Initiate Assessment</button></div>
+    <table><thead><tr><th>Vendor</th><th>Client</th><th>Trigger</th><th>Stage</th><th>Analyst</th><th>Due</th></tr></thead><tbody>
+    ${open.sort((a,b)=>(b.overdue?1:0)-(a.overdue?1:0)).map(a=>{const v=vendor(a.vendorId);const c=client(a.clientId);
+      return `<tr onclick="openAssessment('${a.id}')"><td><b>${v.name}</b></td><td>${c.short}</td><td class="sm">${a.trigger}</td><td>${stageBadge(a)}</td><td class="sm">${a.analyst}</td><td class="sm" style="color:${a.overdue?"var(--crit)":"inherit"}">${a.due}</td></tr>`;}).join("")}
+    </tbody></table></div>`;
+};
+
+/* ---------- VENDORS (Netrio) ---------- */
+VIEWS.vendors = () => {
+  const f = state.vendorFilter||{};
+  let list = VENDORS.filter(v=> (!f.client||v.clientId===f.client) && (!f.tier||v.tier==+f.tier) && (!f.rating||v.rating===f.rating));
+  return `
+  <div class="hd"><div><h2>Vendor Portfolio</h2><div class="sub">${list.length} vendors · all clients</div></div>
+    <div class="row">
+      <select onchange="state.vendorFilter={...state.vendorFilter,client:this.value};render()"><option value="">All clients</option>${CLIENTS.map(c=>`<option value="${c.id}" ${f.client===c.id?"selected":""}>${c.name}</option>`).join("")}</select>
+      <select onchange="state.vendorFilter={...state.vendorFilter,tier:this.value};render()"><option value="">All tiers</option>${[1,2,3,4].map(t=>`<option ${f.tier==t?"selected":""}>${t}</option>`).join("")}</select>
+      <select onchange="state.vendorFilter={...state.vendorFilter,rating:this.value};render()"><option value="">All ratings</option>${["Critical","High","Medium","Low"].map(r=>`<option ${f.rating===r?"selected":""}>${r}</option>`).join("")}</select>
+      <button class="btn pri" onclick="addVendorModal()">+ Add Vendor</button>
+    </div></div>
+  <div class="card">${vendorTable(list,true)}</div>`;
+};
+
+function vendorTable(list, showClient){
+  return `<table><thead><tr><th>Vendor</th>${showClient?"<th>Client</th>":""}<th>Tier</th><th>Category</th><th>Data Types</th><th>Status</th><th>Risk Score</th><th>Rating</th><th>Last Assessed</th></tr></thead><tbody>
+  ${list.map(v=>`<tr onclick="openVendor('${v.id}')">
+    <td><b>${v.name}</b><div class="xs mut">${v.contact}</div></td>
+    ${showClient?`<td>${client(v.clientId).short}</td>`:""}
+    <td>${tierBadge(v.tier)}</td><td class="sm">${v.cat}</td>
+    <td>${v.dataTypes.map(d=>`<span class="b ${d==="PHI"?"crit":d==="PII"?"high":"gray"}" style="margin-right:3px">${d}</span>`).join("")}</td>
+    <td>${statusBadge(v.status)}</td>
+    <td>${v.score!=null?`<b style="color:${scoreColor(v.score)}">${v.score}</b><span class="xs mut">/100</span>`:'<span class="mut">—</span>'}</td>
+    <td>${rb(v.rating)}</td><td class="sm">${v.lastAssess||"Never"}</td></tr>`).join("")||'<tr class="nolink"><td colspan="9" class="mut">No vendors match filters.</td></tr>'}
+  </tbody></table>`;
+}
+
+function openVendor(id){
+  const v=vendor(id); const c=client(v.clientId);
+  const hist=ASSESSMENTS.filter(a=>a.vendorId===id);
+  const ev=EVIDENCE.filter(e=>e.vendor===v.name);
+  const canEdit = isNetrio()||state.role==="cadmin";
+  openDrawer(`
+    <div class="dh"><div style="flex:1"><b style="font-size:15px">${v.name}</b><div class="xs mut">${c.name} · ${v.cat}${v.website?` · ${v.website}`:""}</div></div>
+      ${canEdit?`<button class="btn sm pri" onclick="startAssessment('${v.id}')">Assess</button>`:""}
+      <button class="btn sm" onclick="closeDrawer()">✕</button></div>
+    <div class="db">
+      <div class="grid g3 mb">
+        <div class="card kpi" style="padding:12px"><div class="v" style="font-size:20px;color:${scoreColor(v.score)}">${v.score??"—"}</div><div class="l">Risk score</div></div>
+        <div class="card kpi" style="padding:12px"><div class="v" style="font-size:20px">${tierBadge(v.tier)}</div><div class="l">Criticality tier</div></div>
+        <div class="card kpi" style="padding:12px"><div style="margin-top:2px">${rb(v.rating)}</div><div class="l" style="margin-top:6px">Current rating</div></div>
+      </div>
+      <div class="card mb"><h3>Profile</h3><table>
+        <tr class="nolink"><td class="mut sm" style="width:150px">Primary contact</td><td>${v.contact} · <span class="sm">${v.email}</span></td></tr>
+        <tr class="nolink"><td class="mut sm">Service description</td><td class="sm">${v.desc||"—"}</td></tr>
+        <tr class="nolink"><td class="mut sm">Data types handled</td><td>${v.dataTypes.map(d=>`<span class="b ${d==="PHI"?"crit":d==="PII"?"high":"gray"}" style="margin-right:3px">${d}</span>`).join("")}</td></tr>
+        <tr class="nolink"><td class="mut sm">Contract end / renewal</td><td class="sm">${v.contractEnd||"Not set"} ${v.contractEnd&&v.contractEnd<"2026-10-04"?'<span class="b high">Renewal window — auto-assessment T-90</span>':""}</td></tr>
+        <tr class="nolink"><td class="mut sm">Lifecycle status</td><td>${statusBadge(v.status)} ${canEdit?`<select class="sm" style="padding:3px 6px;margin-left:6px" onchange="setVendorStatus('${v.id}',this.value)">${STATUSES.map(s=>`<option ${s===v.status?"selected":""}>${s}</option>`).join("")}</select>`:""}</td></tr>
+      </table></div>
+      <div class="card mb"><h3>Assessment History</h3>${hist.length?`<table><thead><tr><th>Initiated</th><th>Cycle</th><th>Questionnaire</th><th>Status</th><th>Score</th></tr></thead><tbody>
+        ${hist.map(a=>`<tr onclick="openAssessment('${a.id}')"><td class="sm">${a.initiated}</td><td class="sm">${a.cycle}</td><td class="sm">${a.questionnaire}<div class="xs mut">SIG ${a.sigVersion}</div></td><td>${stageBadge(a)}</td><td>${a.score!=null?`<b style="color:${scoreColor(a.score)}">${a.score}</b>`:"—"}</td></tr>`).join("")}</tbody></table>`:'<div class="mut sm">No assessments yet.</div>'}</div>
+      <div class="card"><h3>Evidence Library</h3>${ev.length?`<table><thead><tr><th>Document</th><th>Expires</th><th>Status</th></tr></thead><tbody>
+        ${ev.map(e=>`<tr class="nolink"><td class="sm">📄 ${e.doc}</td><td class="sm">${e.expires}</td><td><span class="b ${e.status==="Expired"?"crit":e.status==="Expiring soon"?"high":"low"}">${e.status}</span></td></tr>`).join("")}</tbody></table>`:'<div class="mut sm">No evidence on file.</div>'}</div>
+    </div>`);
+}
+
+function setVendorStatus(id,s){ const v=vendor(id); v.status=s; log(`Vendor ${v.name}: status → ${s}`); toast("Status updated — transition logged with timestamp & user"); render(); openVendor(id); }
+
+function addVendorModal(presetClient){
+  const cid = presetClient || (isClient()? state.clientId : "");
+  openModal(`
+    <h3>Add Vendor</h3><div class="msub">Same standardized profile whether added by Netrio staff or a Client Admin. <span class="req" style="color:var(--crit)">*</span> = required.</div>
+    <form onsubmit="saveVendor(event)">
+    ${isNetrio()?`<div class="fg"><label>Client <span class="req">*</span></label><select id="nv_client" required>${CLIENTS.map(c=>`<option value="${c.id}">${c.name}</option>`).join("")}</select></div>`:`<input type="hidden" id="nv_client" value="${cid}">`}
+    <div class="f2">
+      <div class="fg"><label>Vendor / Company Name <span class="req">*</span></label><input id="nv_name" required placeholder="Acme Corp"></div>
+      <div class="fg"><label>Service Category <span class="req">*</span></label><select id="nv_cat">${SERVICE_CATS.map(s=>`<option>${s}</option>`).join("")}</select></div>
+    </div>
+    <div class="f2">
+      <div class="fg"><label>Primary Contact Name <span class="req">*</span></label><input id="nv_contact" required></div>
+      <div class="fg"><label>Primary Contact Email <span class="req">*</span></label><input id="nv_email" type="email" required></div>
+    </div>
+    <div class="fg"><label>Data Types Handled <span class="req">*</span></label><div class="chks">${DATA_TYPES.map(d=>`<label><input type="checkbox" name="nv_dt" value="${d}">${d}</label>`).join("")}</div></div>
+    <div class="f2">
+      <div class="fg"><label>Criticality / Risk Tier <span class="req">*</span></label><select id="nv_tier"><option value="1">Tier 1 — Critical</option><option value="2">Tier 2 — High</option><option value="3" selected>Tier 3 — Medium</option><option value="4">Tier 4 — Low</option></select></div>
+      <div class="fg"><label>Contract End / Renewal Date</label><input id="nv_cend" type="date"></div>
+    </div>
+    <div class="f2">
+      <div class="fg"><label>Vendor Website</label><input id="nv_web" placeholder="vendor.com"></div>
+      <div class="fg"><label>Secondary Contact(s)</label><input id="nv_sec"></div>
+    </div>
+    <div class="fg"><label>Brief Service Description</label><textarea id="nv_desc" rows="2"></textarea></div>
+    <div class="xs mut mb">Tier informs default assessment frequency and SIG domain scope (Tier ${"1: annual, full 21 domains · Tier 3: biennial, 8 domains"}). An Initial Onboarding Assessment will be triggered automatically.</div>
+    <div class="row" style="justify-content:flex-end"><button type="button" class="btn" onclick="closeModal()">Cancel</button><button class="btn pri">Save Vendor</button></div>
+    </form>`);
+}
+
+function saveVendor(e){
+  e.preventDefault();
+  const dts=[...document.querySelectorAll('input[name="nv_dt"]:checked')].map(x=>x.value);
+  if(!dts.length){ toast("Data Types Handled is required"); return; }
+  const cid=$("nv_client").value;
+  const c = CLIENTS.find(x=>x.id===cid);
+  if(c.entUsed>=c.entTotal){ closeModal(); openModal(`<h3>Entitlement limit reached</h3><div class="msub">${c.name} has used ${c.entUsed} of ${c.entTotal} contracted assessments. The vendor can be saved, but the automatic onboarding assessment cannot be initiated.</div><div class="notice red">Please contact Netrio to expand your contract before initiating new assessments.</div><div class="row" style="justify-content:flex-end"><button class="btn pri" onclick="closeModal()">Understood</button></div>`); return; }
+  const v={id:"v"+(VENDORS.length+1), clientId:cid, name:$("nv_name").value, contact:$("nv_contact").value, email:$("nv_email").value, cat:$("nv_cat").value, dataTypes:dts, tier:+$("nv_tier").value, status:"Pending Onboarding", contractEnd:$("nv_cend").value||null, score:null, rating:null, lastAssess:null, website:$("nv_web").value, desc:$("nv_desc").value};
+  VENDORS.push(v);
+  ASSESSMENTS.push({id:"a"+(ASSESSMENTS.length+1), vendorId:v.id, clientId:cid, trigger:"Automatic — Onboarding", cycle:"Initial Onboarding Assessment", stage:1, questionnaire:`Netrio SIG 2026 (Tier ${v.tier} scope)`, sigVersion:"2026.1", analyst:ANALYSTS[VENDORS.length%3], initiated:"2026-07-04", due:"2026-08-03", overdue:false, score:null, respMethod:"Email Link (No Login)", type:"full_sig"});
+  c.entUsed++;
+  log(`Vendor ${v.name} onboarded for ${c.name}; initial onboarding assessment auto-triggered`);
+  closeModal(); toast("Vendor saved — initial onboarding assessment auto-triggered"); render();
+}
+
+/* ---------- ASSESSMENTS (Netrio) ---------- */
+VIEWS.assessments = () => {
+  const tab = state.pillTab.assess||"open";
+  let list = ASSESSMENTS.filter(a=> tab==="open"? a.stage<9 : tab==="overdue"? a.overdue&&a.stage<9 : a.stage>=9);
+  return `
+  <div class="hd"><div><h2>Assessments</h2><div class="sub">Manual, tier-based, contract-date, and event-driven triggers per PRD §3.2</div></div>
+  <button class="btn pri" onclick="newAssessmentModal()">+ Initiate Assessment</button></div>
+  <div class="pill-tabs">
+    ${[["open","In Progress"],["overdue","Overdue"],["done","Completed"]].map(([k,l])=>`<div class="pt ${tab===k?"on":""}" onclick="state.pillTab.assess='${k}';render()">${l} (${ASSESSMENTS.filter(a=>k==="open"?a.stage<9:k==="overdue"?a.overdue&&a.stage<9:a.stage>=9).length})</div>`).join("")}
+  </div>
+  <div class="card"><table><thead><tr><th>Vendor</th><th>Client</th><th>Type</th><th>Cycle</th><th>Trigger</th><th>Questionnaire</th><th>Stage</th><th>Analyst</th><th>Score</th></tr></thead><tbody>
+  ${list.map(a=>{const v=vendor(a.vendorId);return `<tr onclick="openAssessment('${a.id}')">
+    <td><b>${v.name}</b> ${tierBadge(v.tier)}</td><td>${client(a.clientId).short}</td>
+    <td>${typeBadge(a.type)}</td>
+    <td class="sm">${a.cycle}</td><td class="sm">${a.trigger}${a.event?`<div class="xs" style="color:var(--crit)">${a.event}</div>`:""}</td>
+    <td class="sm">${a.questionnaire}${a.replaces?`<div class="xs mut">Replaces ${a.replaces}</div>`:""}${a.replacedBy?`<div class="xs mut">Replaced by ${a.replacedBy}</div>`:""}</td><td>${stageBadge(a)}</td><td class="sm">${a.analyst}</td>
+    <td>${a.score!=null?`<b style="color:${scoreColor(a.score)}">${a.score}</b>`:"—"}</td></tr>`;}).join("")||'<tr class="nolink"><td colspan="9" class="mut">Nothing here.</td></tr>'}
+  </tbody></table></div>`;
+};
+
+function newAssessmentModal(vid){
+  const vends = isClient()? VENDORS.filter(v=>v.clientId===state.clientId) : VENDORS;
+  openModal(`
+    <h3>${isClient()?"Request Assessment":"Initiate Assessment"}</h3>
+    <div class="msub">${isClient()?"Requests are routed to your Netrio analyst. Whether this consumes an entitlement depends on the assessment type selected below.":"Assessment will move through the 9-stage workflow (PRD §3.5)."}</div>
+    <div class="fg"><label>Vendor</label><select id="na_vendor">${vends.map(v=>`<option value="${v.id}" ${v.id===vid?"selected":""}>${v.name} (${client(v.clientId).short}, Tier ${v.tier})</option>`).join("")}</select></div>
+    <div class="f2">
+      <div class="fg"><label>Assessment Type</label><select id="na_type">${ASSESS_TYPES.map(t=>`<option value="${t.id}">${t.name}${t.countsToward?"":" — does not consume entitlement"}</option>`).join("")}</select></div>
+      <div class="fg"><label>Cycle Type</label><select id="na_cycle"><option>Ad Hoc / On Demand</option><option>Initial Onboarding Assessment</option><option>Periodic Reassessment</option><option>Event-Driven Reassessment</option></select></div>
+    </div>
+    <div class="f2">
+      <div class="fg"><label>Vendor Response Method</label><select id="na_resp"><option>Email Link (No Login)</option><option>Portal Login</option></select></div>
+      <div class="fg"><label>Due Date</label><input id="na_due" type="date" value="2026-08-03"></div>
+    </div>
+    <div class="xs mut mb">Entitlement consumption per type is set in Platform Config → Assessment Types.</div>
+    <div class="row" style="justify-content:flex-end"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn pri" onclick="createAssessment()">${isClient()?"Submit Request":"Initiate"}</button></div>`);
+}
+function startAssessment(vid){ closeDrawer(); newAssessmentModal(vid); }
+function createAssessment(){
+  const vid=$("na_vendor").value; const v=vendor(vid); const c=CLIENTS.find(x=>x.id===v.clientId);
+  const type = ASSESS_TYPES.find(t=>t.id===$("na_type").value) || ASSESS_TYPES[0];
+  if(type.countsToward && c.entUsed>=c.entTotal){ closeModal(); toast("Blocked: "+c.short+" entitlement limit reached — contact Netrio to expand contract"); return; }
+  if(type.countsToward) c.entUsed++;
+  ASSESSMENTS.push({id:"a"+(ASSESSMENTS.length+1), vendorId:vid, clientId:v.clientId, trigger:isClient()?"Manual — Client":"Manual — Netrio Staff", cycle:$("na_cycle").value, stage:1, questionnaire:type.id==="client_custom"?"Client-uploaded questionnaire":`Netrio SIG 2026 (${type.name})`, sigVersion:type.id==="full_sig"?"2026.1":"—", analyst:ANALYSTS[ASSESSMENTS.length%3], initiated:"2026-07-04", due:$("na_due").value, overdue:false, score:null, respMethod:$("na_resp").value, type:type.id});
+  v.status="Under Assessment";
+  log(`Assessment initiated for ${v.name} (${type.name}${type.countsToward?"":" — no entitlement consumed"})`);
+  closeModal(); toast(type.countsToward?(isClient()?"Request submitted — 1 entitlement consumed":"Assessment initiated — 1 entitlement consumed"):"Assessment initiated — does not consume an entitlement"); render();
+}
+
+function cancelAndReplace(id){
+  const a=ASSESSMENTS.find(x=>x.id===id); const v=vendor(a.vendorId);
+  const docType=ASSESS_TYPES.find(t=>t.id==="doc_review");
+  openModal(`
+    <h3>Cancel & Replace Assessment</h3>
+    <div class="msub">${v.name} — cancels this ${assessTypeName(a.type)} and opens a Documentation Review in its place (e.g., the vendor supplied policy documentation instead of completing the full SIG).</div>
+    <div class="notice">Whether the replacement consumes a <b>second</b> entitlement is controlled by the Documentation Review toggle in Platform Config → Assessment Types — currently set to <b>${docType.countsToward?"counts toward entitlement":"does not count toward entitlement"}</b>. This is the exact scenario raised for Cyber Governance to confirm as policy before launch.</div>
+    <div class="row" style="justify-content:flex-end"><button class="btn" onclick="closeModal()">Never mind</button><button class="btn pri" onclick="doCancelReplace('${id}')">Confirm Cancel & Replace</button></div>`);
+}
+function doCancelReplace(id){
+  const a=ASSESSMENTS.find(x=>x.id===id); const v=vendor(a.vendorId); const c=CLIENTS.find(x=>x.id===a.clientId);
+  const docType=ASSESS_TYPES.find(t=>t.id==="doc_review");
+  a.cancelled=true;
+  if(docType.countsToward) c.entUsed++;
+  const newA={id:"a"+(ASSESSMENTS.length+1), vendorId:a.vendorId, clientId:a.clientId, trigger:"Manual — Netrio Staff", cycle:"Ad Hoc / On Demand", stage:2, questionnaire:"Documentation Review checklist", sigVersion:"—", analyst:a.analyst, initiated:"2026-07-04", due:a.due, overdue:false, score:null, respMethod:a.respMethod, type:"doc_review", replaces:id};
+  ASSESSMENTS.push(newA);
+  a.replacedBy=newA.id;
+  log(`Assessment ${id} (${v.name}) cancelled and replaced by ${newA.id} — Documentation Review${docType.countsToward?" (entitlement consumed)":" (no entitlement consumed per current config)"}`);
+  closeModal(); toast("Cancelled & replaced — adjust the consumption rule anytime in Platform Config"); render(); openAssessment(newA.id);
+}
+
+function openAssessment(id){
+  state.assessId=id;
+  const a=ASSESSMENTS.find(x=>x.id===id); const v=vendor(a.vendorId); const c=client(a.clientId);
+  const canWork=isNetrio();
+  const catScores = a.score!=null ? SCORING.categories.map((cat,i)=>({...cat, s: Math.max(5,Math.min(100, a.score+[8,-12,5,10,-6][i]))})) : null;
+  openDrawer(`
+    <div class="dh"><div style="flex:1"><b style="font-size:15px">Assessment — ${v.name}</b><div class="xs mut">${c.name} · ${a.cycle} · SIG version ${a.sigVersion} · Analyst: ${a.analyst}</div></div>
+      <button class="btn sm" onclick="closeDrawer()">✕</button></div>
+    <div class="db">
+      <div class="row mb" style="margin-bottom:12px">${typeBadge(a.type)}${a.cancelled?`<span class="b gray">Cancelled → replaced by ${a.replacedBy}</span>`:""}${a.replaces?`<span class="b gray">Replaces ${a.replaces}</span>`:""}</div>
+      ${a.event?`<div class="notice red"><b>Event-driven trigger:</b> ${a.event}</div>`:""}
+      <div class="card mb"><h3>Workflow — Stage ${Math.min(a.stage,9)} of 9${a.cancelled?" (cancelled)":""}</h3><div class="steps">
+        ${STAGES.map((s,i)=>{const n=i+1;const st=n<a.stage?"done":n===a.stage?"cur":"";
+          const desc={1:"Trigger: "+a.trigger,2:a.questionnaire,3:"Sent via "+a.respMethod+(a.overdue?" · reminders active (7d, then every 3d)":""),4:"Vendor completing responses & uploading evidence",5:"Analyst accept / reject / request clarification",6:"Weighted score across configured risk categories",7:"Analyst findings, narrative & recommendations",8:"Results shared to client portal",9:a.completed?"Completed "+a.completed:"Vendor risk record updated"}[n]||"";
+          return `<div class="step ${st}"><div class="dot">${n<a.stage?"✓":n}</div><div><div class="st">${s}</div><div class="sd">${desc}</div></div></div>`;}).join("")}
+      </div>
+      ${canWork&&a.stage<9&&!a.cancelled?`<div class="row" style="margin-top:6px">${a.stage===4?`<button class="btn sm pri" onclick="go('review');closeDrawer()">Open Questionnaire Review →</button>`:""}<button class="btn sm ok" onclick="advanceStage('${a.id}')">Advance to: ${STAGES[a.stage]||"Close"}</button><button class="btn sm no" onclick="cancelAndReplace('${a.id}')">Cancel & Replace…</button></div>`:""}
+      </div>
+      ${catScores?`<div class="card mb"><h3>Weighted Risk Scoring (PRD §3.4)</h3>
+        <table><thead><tr><th>Category</th><th>Weight</th><th>Score</th><th></th></tr></thead><tbody>
+        ${catScores.map(cs=>`<tr class="nolink"><td>${cs.name}</td><td class="sm">${cs.weight}%</td><td><b style="color:${scoreColor(cs.s)}">${cs.s}</b></td><td style="width:35%"><div class="bar"><i style="width:${cs.s}%;background:${scoreColor(cs.s)}"></i></div></td></tr>`).join("")}
+        <tr class="nolink" style="background:#f8fafc"><td><b>Overall (weighted)</b></td><td class="sm">100%</td><td><b style="color:${scoreColor(a.score)};font-size:15px">${a.score}</b></td><td>${rb(ratingOf(a.score))}</td></tr>
+        </tbody></table>
+        <div class="xs mut mt">Thresholds: ≥${SCORING.thresholds.low} Low · ≥${SCORING.thresholds.medium} Medium · ≥${SCORING.thresholds.high} High · else Critical (configurable in Platform Config)</div></div>`:""}
+      ${a.stage>=7&&a.score!=null&&a.score<70?`<div class="card mb"><h3>Findings & Recommendations</h3>
+        <div class="msg"><div class="mh">Finding F-1 · High</div>No validated DR testing in 18 months; RTO/RPO unverified. <b>Recommendation:</b> require DR test report within 60 days; track remediation via ServiceNow task.</div>
+        <div class="msg"><div class="mh">Finding F-2 · Medium</div>BAA references superseded legal entity. <b>Recommendation:</b> re-execute BAA before contract renewal.</div>
+        <div class="row"><button class="btn sm" onclick="toast('ServiceNow incident INC0048291 created (bi-directional sync enabled)')">Create ServiceNow ticket</button></div></div>`:""}
+      <div class="card"><h3>Record</h3><table>
+        <tr class="nolink"><td class="mut sm" style="width:160px">Initiated / Due</td><td class="sm">${a.initiated} → ${a.due} ${a.overdue?'<span class="b crit">Overdue</span>':""}</td></tr>
+        <tr class="nolink"><td class="mut sm">Trigger</td><td class="sm">${a.trigger}</td></tr>
+        <tr class="nolink"><td class="mut sm">Questionnaire / version</td><td class="sm">${a.questionnaire} (SIG ${a.sigVersion}) — version pinned for historical reference</td></tr>
+        <tr class="nolink"><td class="mut sm">Response method</td><td class="sm">${a.respMethod}</td></tr>
+        <tr class="nolink"><td class="mut sm">Assigned analyst</td><td class="sm">${a.analyst}</td></tr>
+      </table></div>
+    </div>`);
+}
+
+function advanceStage(id){
+  const a=ASSESSMENTS.find(x=>x.id===id); const v=vendor(a.vendorId);
+  a.stage++;
+  if(a.stage===6&&a.score==null){ a.score=Math.floor(55+Math.random()*40); }
+  if(a.stage>=9){ a.stage=9; a.completed="2026-07-04"; a.overdue=false; v.score=a.score; v.rating=ratingOf(a.score); v.status="Assessment Complete"; v.lastAssess="2026-07-04"; toast("Assessment closed — vendor risk record updated"); }
+  else toast("Advanced to stage "+a.stage+": "+STAGES[a.stage-1]);
+  log(`Assessment ${id} advanced to stage ${a.stage} (${STAGES[a.stage-1]})`);
+  render(); openAssessment(id);
+}
+
+/* ---------- QUESTIONNAIRE REVIEW (Netrio) ---------- */
+function shouldShow(q){ if(!q.showIf) return true; const dep=QUESTIONS.find(x=>x.id===q.showIf.q); return dep && dep.answer===q.showIf.eq; }
+VIEWS.review = () => {
+  const a=ASSESSMENTS.find(x=>x.id==="a1"); const v=vendor(a.vendorId);
+  const visible = QUESTIONS.filter(shouldShow);
+  const counts={accepted:0,rejected:0,flagged:0,pending:0}; visible.forEach(q=>counts[q.review]++);
+  const byDomain = SIG_DOMAINS.map(d=>({domain:d, qs:visible.filter(q=>q.domain===d)})).filter(g=>g.qs.length);
+  return `
+  <div class="hd"><div><h2>Questionnaire Review — ${v.name}</h2><div class="sub">Netrio SIG 2026 (v2026.1) · Tier 1 scope: all 21 domains · ${visible.length} of ${QUESTIONS.length} questions applicable (1 conditional follow-up hidden until triggered)</div></div>
+  <div class="row"><span class="b low">${counts.accepted} accepted</span><span class="b crit">${counts.rejected} rejected</span><span class="b high">${counts.flagged} flagged</span><span class="b gray">${counts.pending} pending</span></div></div>
+  <div class="notice">Full production SIG assessments typically run several hundred questions across the tier-scoped domains — this prototype shows every question for this demo vendor (${visible.length} across ${byDomain.length} domains), grouped by domain, with the same accept / reject / flag pattern applied per question. Domains with outstanding items are expanded by default.</div>
+  ${byDomain.map(g=>{
+    const gCounts={accepted:0,rejected:0,flagged:0,pending:0}; g.qs.forEach(q=>gCounts[q.review]++);
+    const open = gCounts.rejected+gCounts.flagged+gCounts.pending>0;
+    return `<details class="q" style="padding:0" ${open?"open":""}>
+    <summary style="cursor:pointer;padding:12px 14px;font-weight:650;font-size:13px;display:flex;justify-content:space-between;align-items:center;list-style:none">
+      <span>${g.domain} <span class="xs mut" style="font-weight:500">(${g.qs.length} question${g.qs.length>1?"s":""})</span></span>
+      <span>${gCounts.accepted?`<span class="b low xs">${gCounts.accepted} accepted</span>`:""} ${gCounts.rejected?`<span class="b crit xs">${gCounts.rejected} rejected</span>`:""} ${gCounts.flagged?`<span class="b high xs">${gCounts.flagged} flagged</span>`:""} ${gCounts.pending?`<span class="b gray xs">${gCounts.pending} pending</span>`:""}</span>
+    </summary>
+    <div style="padding:0 14px 14px">
+    ${g.qs.map(q=>`
+    <div class="q" style="background:#fafbfc">
+      <div class="row" style="justify-content:space-between"><span class="qd">${q.showIf?"Follow-up · ":""}${SCORING.categories.find(c=>c.id===q.cat).name}</span>
+        <span>${q.frameworks.map(f=>`<span class="b navy xs" style="margin-left:3px">${f}</span>`).join("")}</span></div>
+      <div class="qt">${q.text}</div>
+      <div class="row" style="justify-content:space-between">
+        <div>Vendor answer: <span class="b ${q.answer==="Yes"?"low":q.answer==="No"?"crit":"high"}">${q.answer}</span></div>
+        <div class="row">
+          <button class="btn sm ok" onclick="reviewQ('${q.id}','accepted')">Accept</button>
+          <button class="btn sm no" onclick="openClarifyModal('${q.id}','rejected')">Reject</button>
+          <button class="btn sm" onclick="openClarifyModal('${q.id}','flagged')">Flag insufficient</button>
+          <span class="b ${ {accepted:"low",rejected:"crit",flagged:"high",pending:"gray"}[q.review] }">${q.review}</span>
+        </div>
+      </div>
+      ${q.evidence?`<div class="ev">📎 ${q.evidence.name} · expires ${q.evidence.expires} ${q.evidence.expires<"2026-08-04"?`<span class="b ${q.evidence.expires<"2026-07-04"?"crit":"high"}">${q.evidence.expires<"2026-07-04"?"Expired":"Expiring soon"}</span>`:'<span class="b low">Current</span>'}</div>`:`<div class="ev" style="color:var(--crit)">No evidence attached — required for this question</div>`}
+      ${q.note?`<div class="xs mt" style="margin-top:7px;color:var(--high)"><b>Message sent to vendor:</b> ${esc(q.note)}</div>`:""}
+    </div>`).join("")}
+    </div></details>`;}).join("")}
+  <div class="card"><div class="row" style="justify-content:space-between"><div class="sm mut">When all responses are reviewed, proceed to weighted scoring.</div><button class="btn pri" onclick="finishReview()">Complete Review → Score</button></div></div>`;
+};
+
+function reviewQ(id,st){ const q=QUESTIONS.find(x=>x.id===id); q.review=st; q.note=""; log(`Response ${id} (${q.domain}) accepted — MedCloud Systems`); render(); }
+
+function openClarifyModal(id,st){
+  const q=QUESTIONS.find(x=>x.id===id); const a=ASSESSMENTS.find(x=>x.id==="a1"); const c=client(a.clientId);
+  const preset = st==="rejected"
+    ? `Hi — thanks for your response to "${q.text}" Unfortunately the evidence provided doesn't sufficiently demonstrate this control is in place. Please provide updated documentation or a remediation plan within 5 business days.`
+    : `Hi — your response to "${q.text}" has been flagged as insufficient. Could you provide additional clarification or updated evidence to support this response?`;
+  openModal(`
+    <h3>${st==="rejected"?"Reject Response & Notify Vendor":"Flag Response & Request Clarification"}</h3>
+    <div class="msub">${q.domain} · MedCloud Systems — this message is emailed to the vendor contact and logged on the assessment record.</div>
+    <div class="fg"><label>Message to vendor (editable)</label><textarea id="clarifyMsg" rows="5">${esc(preset)}</textarea></div>
+    <div class="fg"><label>CC on this email</label><div class="chks">
+      <label><input type="checkbox" checked disabled> Assigned analyst (${a.analyst})</label>
+      <label><input type="checkbox" id="ccClient" ${c.ccClientOnVendorEmails?"checked":""}> Client Admin (${c.name})</label>
+    </div></div>
+    <div class="row" style="justify-content:flex-end"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn ${st==="rejected"?"no":""} pri" onclick="submitClarify('${id}','${st}')">Send to Vendor</button></div>`);
+}
+function submitClarify(id,st){
+  const q=QUESTIONS.find(x=>x.id===id); const a=ASSESSMENTS.find(x=>x.id==="a1"); const c=client(a.clientId);
+  const msg=$("clarifyMsg").value.trim(); const ccClient=$("ccClient").checked;
+  q.review=st; q.note=msg;
+  log(`Response ${id} (${q.domain}) ${st} — custom message sent to vendor${ccClient?" (cc: Client Admin, "+a.analyst+")":" (cc: "+a.analyst+")"}`);
+  closeModal(); toast(`Email sent to vendor contact · CC: ${a.analyst}${ccClient?", Client Admin":""}`); render();
+}
+function finishReview(){
+  const a=ASSESSMENTS.find(x=>x.id==="a1");
+  const vals={Yes:100,Partial:50,No:0,"N/A":100};
+  const visible=QUESTIONS.filter(shouldShow);
+  const cats=SCORING.categories.map(c=>{const qs=visible.filter(q=>q.cat===c.id);const s=qs.length?Math.round(qs.reduce((t,q)=>t+(vals[q.answer]??100),0)/qs.length):100;return {w:c.weight,s};});
+  a.score=Math.round(cats.reduce((t,c)=>t+c.s*c.w,0)/100);
+  a.stage=Math.max(a.stage,6);
+  const v=vendor(a.vendorId); v.score=a.score; v.rating=ratingOf(a.score);
+  log(`Assessment a1 scored: ${a.score}/100 (${v.rating}) via weighted model`);
+  toast(`Weighted score calculated: ${a.score}/100 → ${ratingOf(a.score)} risk`);
+  openAssessment("a1");
+}
+
+/* ---------- REPORTS ---------- */
+function reportsBody(scopedClient){
+  const types=[
+    ["Vendor Risk Summary","All vendors, point-in-time risk posture","▦"],
+    ["Individual Vendor Assessment","Full assessment detail for a single vendor","▤"],
+    ["Risk Trend Report","Risk score changes over time","◔"],
+    ["Outstanding Assessments","Overdue and in-progress","⚠"],
+    ["Evidence Expiration","Upcoming and expired evidence by vendor","◷"],
+    ["Entitlement Usage","Assessments consumed vs. contracted","◫"],
+    ["Executive Summary","Narrative report with analyst commentary & recommendations","✎"]
+  ];
+  return `
+  <div class="grid g3 mb">${types.map(t=>`<div class="card"><div class="row" style="justify-content:space-between"><h3 style="margin:0">${t[2]} ${t[0]}</h3></div><div class="sm mut" style="margin:8px 0 12px">${t[1]}</div>
+    <div class="row"><button class="btn sm" onclick="toast('${t[0]} exported as PDF (mock)')">PDF</button><button class="btn sm" onclick="toast('${t[0]} exported as Excel/CSV (mock)')">Excel / CSV</button><button class="btn sm" onclick="toast('Scheduled: ${t[0]} monthly to stakeholders (mock)')">Schedule email</button></div></div>`).join("")}
+  </div>
+  <div class="card"><h3>Regulatory Framework Coverage ${scopedClient?`— ${scopedClient.name}`:"(SIG mappings surfaced per PRD §4.1.2)"}</h3>
+  <div class="sm mut mb">SIG responses map to major frameworks so each assessment shows which compliance requirements are addressed.</div>
+  <div class="row">${(scopedClient?scopedClient.frameworks:FRAMEWORKS).map(f=>`<span class="b navy">${f}</span>`).join("")}</div></div>`;
+}
+VIEWS.reports = () => `<div class="hd"><div><h2>Reports</h2><div class="sub">PDF, Excel/CSV, scheduled email delivery, and executive summaries (PRD §5.2–5.3)</div></div>
+  <select onchange="toast('Report scope set to '+this.options[this.selectedIndex].text)"><option>All clients</option>${CLIENTS.map(c=>`<option>${c.name}</option>`).join("")}</select></div>${reportsBody()}`;
+
+/* ---------- PLATFORM CONFIG (Netrio Admin) ---------- */
+VIEWS.config = () => {
+  const tab=state.pillTab.cfg||"scoring";
+  let body="";
+  if(tab==="scoring"){
+    body=`<div class="grid g2">
+    <div class="card"><h3>Risk Categories & Weights</h3><table><thead><tr><th>Category</th><th>Weight %</th></tr></thead><tbody>
+      ${SCORING.categories.map((c,i)=>`<tr class="nolink"><td>${c.name}</td><td style="width:110px"><input type="number" value="${c.weight}" min="0" max="100" style="width:80px" onchange="SCORING.categories[${i}].weight=+this.value;toast('Weight updated — scores recalculate on next assessment')"></td></tr>`).join("")}
+      <tr class="nolink" style="background:#f8fafc"><td><b>Total</b></td><td><b>${SCORING.categories.reduce((t,c)=>t+c.weight,0)}%</b></td></tr></tbody></table>
+      <div class="xs mut mt">Individual questionnaire responses map to scoring values (Yes=100, Partial=50, No=0) that roll up into category scores and an overall weighted vendor score.</div></div>
+    <div class="card"><h3>Rating Thresholds</h3>
+      ${[["low","Low risk ≥"],["medium","Medium risk ≥"],["high","High risk ≥"]].map(([k,l])=>`<div class="fg"><label>${l}</label><input type="number" value="${SCORING.thresholds[k]}" onchange="SCORING.thresholds['${k}']=+this.value;toast('Thresholds updated')"></div>`).join("")}
+      <div class="xs mut">Below High threshold → Critical rating.</div></div>
+    </div>`;
+  } else if(tab==="sig"){
+    body=`<div class="card mb"><div class="row" style="justify-content:space-between"><h3 style="margin:0">SIG Domain Scoping by Vendor Tier</h3><span class="b teal">SIG 2026.1 · Shared Assessments corporate license active</span></div>
+    <div class="sm mut" style="margin:8px 0 12px">All 21 SIG risk control domains. Check which domains apply to each tier (PRD §4.1.1). Historical assessments stay pinned to the SIG version used at the time.</div>
+    <table><thead><tr><th>#</th><th>Domain</th><th>T1</th><th>T2</th><th>T3</th><th>T4</th></tr></thead><tbody>
+    ${SIG_DOMAINS.map((d,i)=>`<tr class="nolink"><td class="mut sm">${i+1}</td><td class="sm">${d}</td>
+      ${[1,2,3,4].map(t=>`<td><input type="checkbox" ${TIER_SCOPE[t].includes(i)?"checked":""} onchange="toggleScope(${t},${i},this.checked)"></td>`).join("")}</tr>`).join("")}
+    </tbody></table></div>`;
+  } else if(tab==="types"){
+    body=`<div class="card"><h3>Assessment Types & Entitlement Consumption</h3>
+    <div class="sm mut mb">Controls which assessment types consume a client's contracted entitlement. This directly answers scenarios like: <i>a Tier 1 vendor's full SIG is cancelled mid-flight and replaced with a Documentation Review after the vendor supplied policy docs instead — does that count once or twice?</i> Today each type is toggled independently below, so that scenario can be configured to count as 1 (turn off consumption for Documentation Review) or 2 (leave it on). Netrio Cyber Governance should confirm the intended policy before launch — see PRD Open Items. Use "Cancel & Replace" on any in-progress assessment to try the scenario live.</div>
+    <table><thead><tr><th>Type</th><th>Description</th><th>Counts toward entitlement</th></tr></thead><tbody>
+    ${ASSESS_TYPES.map((t,i)=>`<tr class="nolink"><td><b>${t.name}</b></td><td class="sm mut">${t.desc}</td><td><input type="checkbox" ${t.countsToward?"checked":""} onchange="ASSESS_TYPES[${i}].countsToward=this.checked;toast('Updated — applies to future assessments of this type');render()"></td></tr>`).join("")}
+    </tbody></table>
+    <div class="xs mut mt">Pulse Surveys default to off — they're intended as lightweight recurring check-ins between full cycles, not a full reassessment, but that's also a configurable choice, not a fixed rule.</div></div>`;
+  } else if(tab==="email"){
+    const selId = state.emailPreviewClient || CLIENTS[0].id;
+    const c = CLIENTS.find(x=>x.id===selId) || CLIENTS[0];
+    const evts = emailEvents(c);
+    body=`<div class="card mb"><div class="row" style="justify-content:space-between;align-items:center">
+      <h3 style="margin:0">Email Notification Events (PRD §6.3.1)</h3>
+      <select onchange="state.emailPreviewClient=this.value;render()">${CLIENTS.map(cl=>`<option value="${cl.id}" ${cl.id===c.id?"selected":""}>${cl.name}</option>`).join("")}</select>
+      </div>
+      <div class="row mt" style="margin-top:10px">
+        <label class="sm" style="display:flex;align-items:center;gap:5px"><input type="checkbox" ${c.ccClientOnVendorEmails?"checked":""} onchange="CLIENTS.find(x=>x.id==='${c.id}').ccClientOnVendorEmails=this.checked;render()"> CC Client Admin on vendor-facing emails</label>
+        <label class="sm" style="display:flex;align-items:center;gap:5px"><input type="checkbox" ${c.ccAnalystOnClientEmails?"checked":""} onchange="CLIENTS.find(x=>x.id==='${c.id}').ccAnalystOnClientEmails=this.checked;render()"> CC assigned analyst on client-facing emails</label>
+      </div>
+      <div class="xs mut mt">Both are on by default and configurable per client — this answers "can we CC both the analyst and client contact on all automated emails."</div>
+    </div>
+    <div class="card"><table><thead><tr><th>Event</th><th>To</th><th>CC</th><th></th><th>Enabled</th></tr></thead><tbody>
+    ${evts.map((e,i)=>`<tr class="nolink"><td class="sm">${e.name}</td><td class="sm mut">${e.to}</td><td class="sm mut">${e.cc.length?e.cc.join(", "):"—"}</td><td><button class="btn sm" onclick="previewEmail(${i},'${c.id}')">Preview</button></td><td><input type="checkbox" checked onchange="toast('Notification preference saved (per-client configurable)')"></td></tr>`).join("")}
+    </tbody></table></div>`;
+  } else {
+    body=`<div class="grid g2">
+    <div class="card"><h3>Integrations</h3>
+      ${[["ServiceNow","Bi-directional: incidents/tasks for high-risk findings, remediation tracking, status sync","Connected"],["NinjaOne","Asset & endpoint context for assessments — use cases in technical design (Open Item #1)","Pending design"],["Microsoft 365 / Azure AD","SSO for Netrio staff; Azure AD sync for provisioning/deprovisioning; client & vendor SSO optional","Connected"]].map(x=>`<div class="msg"><div class="row" style="justify-content:space-between"><b>${x[0]}</b><span class="b ${x[2]==="Connected"?"low":"high"}">${x[2]}</span></div><div class="sm mut" style="margin-top:4px">${x[1]}</div></div>`).join("")}
+    </div>
+    <div class="card"><h3>Security & Platform (NFRs §9)</h3>
+      ${[["Encryption","AES-256 at rest · TLS 1.2+ in transit"],["MFA","Enforced for all roles"],["RBAC","Enforced at API layer"],["Audit retention","2 years, immutable"],["Data retention","Assessments & evidence 5 years; soft-delete recoverable 90 days"],["Uptime target","99.9% · RTO 4h · RPO 1h"]].map(x=>`<div class="row" style="justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line)"><span class="sm">${x[0]}</span><span class="sm mut">${x[1]}</span></div>`).join("")}
+    </div></div>`;
+  }
+  return `<div class="hd"><div><h2>Platform Configuration</h2><div class="sub">Netrio Admin only — scoring model, SIG scoping, assessment types, notifications, integrations</div></div></div>
+  <div class="pill-tabs">${[["scoring","Scoring Model"],["sig","SIG Domains & Tiers"],["types","Assessment Types"],["email","Email Templates"],["integr","Integrations & Security"]].map(([k,l])=>`<div class="pt ${tab===k?"on":""}" onclick="state.pillTab.cfg='${k}';render()">${l}</div>`).join("")}</div>${body}`;
+};
+function toggleScope(t,i,on){ if(on&&!TIER_SCOPE[t].includes(i)) TIER_SCOPE[t].push(i); if(!on) TIER_SCOPE[t]=TIER_SCOPE[t].filter(x=>x!==i); log(`Tier ${t} SIG scope updated: ${SIG_DOMAINS[i]} ${on?"added":"removed"}`); toast("Tier scoping saved"); }
+
+/* ---------- Email preview engine ---------- */
+function emailEvents(c){
+  return [
+    {name:"Questionnaire sent to vendor", to:"Vendor contact", cc:["Assigned analyst", c.ccClientOnVendorEmails?"Client Admin":null].filter(Boolean),
+      subject:"Action required: complete your Netrio vendor risk questionnaire", body:`Hello {{vendor_contact}},\n\nOn behalf of ${c.name}, Netrio's Cyber Governance team has initiated a vendor risk assessment for {{vendor_name}}. Please complete the attached SIG questionnaire within 14 days using the secure link below.\n\n[Secure Questionnaire Link]\n\nQuestions? Reply to this email or contact your Netrio analyst directly.\n\nThank you,\nNetrio Cyber Governance Team`},
+    {name:"Vendor response submitted", to:"Assigned analyst", cc:[c.ccClientOnVendorEmails?"Client Admin":null].filter(Boolean),
+      subject:"Vendor response received — {{vendor_name}}", body:`{{vendor_name}} has submitted their questionnaire response for ${c.name}. Log in to the Netrio TPRM platform to begin review.`},
+    {name:"Assessment overdue", to:"Assigned analyst, Client Admin", cc:[],
+      subject:"Overdue: {{vendor_name}} vendor risk assessment", body:`The assessment for {{vendor_name}} is now overdue (due {{due_date}}). Automated reminders have been sent to the vendor at 7 days and every 3 days thereafter. Please follow up.`},
+    {name:"Evidence expiring (30-day threshold)", to:"Assigned analyst, Client Admin", cc:[],
+      subject:"Evidence expiring soon — {{vendor_name}}", body:`{{doc_name}} on file for {{vendor_name}} expires on {{expiry_date}}. Please request updated documentation before it lapses.`},
+    {name:"Evidence expired", to:"Assigned analyst, Client Admin", cc:[],
+      subject:"Evidence expired — {{vendor_name}}", body:`{{doc_name}} for {{vendor_name}} expired on {{expiry_date}}. This evidence is no longer valid for compliance purposes.`},
+    {name:"Assessment complete", to:"Client Admin, Client Viewer (optional)", cc:[c.ccAnalystOnClientEmails?"Assigned analyst":null].filter(Boolean),
+      subject:"Assessment complete — {{vendor_name}}", body:`The vendor risk assessment for {{vendor_name}} is complete. Overall risk rating: {{risk_rating}}. Log in to your Netrio portal to view the full report.`},
+    {name:"High-risk finding identified", to:"Assigned analyst, Client Admin", cc:[],
+      subject:"High-risk finding — {{vendor_name}}", body:`A Critical/High risk finding was identified for {{vendor_name}}: {{finding_summary}}.\n\nRecommended action: {{recommendation}}.`},
+    {name:"Entitlement nearing limit (80% / 100%)", to:"Netrio Admin, Client Admin", cc:[],
+      subject:`${c.name} approaching assessment entitlement limit`, body:`${c.name} has used {{used}} of {{total}} contracted assessments ({{pct}}%). Contact your Netrio account team to expand the contract if additional assessments are needed.`}
+  ];
+}
+function previewEmail(i, clientId){
+  const c = CLIENTS.find(x=>x.id===clientId); const e = emailEvents(c)[i];
+  const sample = {vendor_name:"MedCloud Systems", vendor_contact:"Rita Okafor", due_date:"2026-07-01", doc_name:"BAA_signed_2023.pdf", expiry_date:"2026-06-20", risk_rating:"High", finding_summary:"No validated DR testing in the last 18 months", recommendation:"Require a DR test report within 60 days", used:c.entUsed, total:c.entTotal, pct:Math.round(c.entUsed/c.entTotal*100)};
+  const fill = s => s.replace(/\{\{(\w+)\}\}/g, (m,k)=> sample[k] ?? m);
+  openModal(`<h3>Email Preview</h3><div class="msub">${e.name} · ${c.name} · sample data shown</div>
+  <div class="fg"><label>To</label><div class="sm">${e.to}</div></div>
+  <div class="fg"><label>CC</label><div class="sm">${e.cc.length?e.cc.join(", "):"—"}</div></div>
+  <div class="fg"><label>Subject</label><div class="sm" style="font-weight:650">${esc(fill(e.subject))}</div></div>
+  <div class="fg"><label>Body</label><div class="card" style="white-space:pre-wrap;font-size:12.5px;background:#f8fafc">${esc(fill(e.body))}</div></div>
+  <div class="row" style="justify-content:flex-end"><button class="btn pri" onclick="closeModal()">Close</button></div>`);
+}
+
+/* ---------- CLIENTS & ENTITLEMENTS (Netrio Admin) ---------- */
+VIEWS.clients = () => `
+  <div class="hd"><div><h2>Clients & Entitlements</h2><div class="sub">Set, adjust and monitor contracted assessment volumes; automated alerts at 80% and 100%</div></div></div>
+  <div class="grid g3 mb">${CLIENTS.map(c=>entitlementCard(c,true)).join("")}</div>
+  <div class="card"><table><thead><tr><th>Client</th><th>Industry</th><th>Vendors</th><th>Entitlement</th><th>Reset</th><th>White-label</th><th>Notifications</th><th></th></tr></thead><tbody>
+  ${CLIENTS.map(c=>`<tr class="nolink"><td><b>${c.name}</b></td><td class="sm">${c.industry}</td><td>${VENDORS.filter(v=>v.clientId===c.id).length}</td>
+    <td><input type="number" value="${c.entTotal}" style="width:75px" onchange="c=CLIENTS.find(x=>x.id==='${c.id}');c.entTotal=+this.value;toast('Entitlement updated for ${c.short}');render()"> <span class="xs mut">(${c.entUsed} used)</span></td>
+    <td class="sm">${c.entPeriod}</td>
+    <td><input type="checkbox" ${c.whiteLabel?"checked":""} onchange="CLIENTS.find(x=>x.id==='${c.id}').whiteLabel=this.checked;toast('White-label setting saved for ${c.short}')"> <span class="xs mut">optional per client</span></td>
+    <td><select class="sm" style="padding:4px" onchange="CLIENTS.find(x=>x.id==='${c.id}').notif=this.value;toast('Notification mode saved')"><option ${c.notif==="netrio-managed"?"selected":""} value="netrio-managed">Netrio-managed</option><option ${c.notif==="client-direct"?"selected":""} value="client-direct">Client-direct</option><option ${c.notif==="hybrid"?"selected":""} value="hybrid">Hybrid</option></select></td>
+    <td><button class="btn sm" onclick="presentClient('${c.id}')">Present to client →</button></td></tr>`).join("")}
+  </tbody></table></div>`;
+
+/* ---------- AUDIT LOG ---------- */
+VIEWS.audit = () => {
+  const tab = state.pillTab.audit||"all";
+  const counts = {all:AUDIT.length, system:AUDIT.filter(a=>a.type==="system").length, netrio:AUDIT.filter(a=>a.type==="netrio").length, client:AUDIT.filter(a=>a.type==="client").length, vendor:AUDIT.filter(a=>a.type==="vendor").length};
+  const list = tab==="all"? AUDIT : AUDIT.filter(a=>a.type===tab);
+  return `
+  <div class="hd"><div><h2>Audit Log</h2><div class="sub">Immutable · timestamp, user identity, action · minimum 2-year retention · every manual and automated action is captured</div></div>
+  <button class="btn" onclick="toast('Audit log exported (mock)')">Export</button></div>
+  <div class="pill-tabs">${[["all","All"],["system","Automated / System"],["netrio","Netrio Staff"],["client","Client"],["vendor","Vendor"]].map(([k,l])=>`<div class="pt ${tab===k?"on":""}" onclick="state.pillTab.audit='${k}';render()">${l} (${counts[k]})</div>`).join("")}</div>
+  <div class="card"><table><thead><tr><th style="width:150px">Timestamp</th><th style="width:120px">Actor type</th><th style="width:230px">User</th><th>Action</th></tr></thead><tbody>
+  ${list.map(l=>`<tr class="nolink"><td class="sm mut">${l.ts}</td><td>${actorBadge(l.type)}</td><td class="sm">${l.user}</td><td class="sm">${l.act}</td></tr>`).join("")||'<tr class="nolink"><td colspan="4" class="mut">No entries in this category.</td></tr>'}
+  </tbody></table></div>`;
+};
+
+/* ============================================================
+   CLIENT PORTAL
+   ============================================================ */
+function portalHeader(){
+  const c=client();
+  const banner = state.presenting? `<div class="notice" style="display:flex;justify-content:space-between;align-items:center;gap:12px"><span>🖥️ <b>Presentation mode</b> — viewing ${c.name}'s portal exactly as their Client Admin sees it.</span><button class="btn sm pri" onclick="exitPresentation()">Exit to Netrio view</button></div>` : "";
+  const brand = c.whiteLabel? `<div class="brandbar" style="background:${c.wlColor}"><div class="wl-logo">${c.short}</div><div><b>${c.name}</b> — Vendor Risk Portal<div class="xs" style="opacity:.8">White-label branding enabled · powered by Netrio</div></div></div>`
+  : `<div class="brandbar" style="background:var(--navy)"><div class="wl-logo">N</div><div><b>Netrio Vendor Risk Portal</b> — ${c.name}<div class="xs" style="opacity:.8">Managed by your Netrio Cyber Governance team</div></div></div>`;
+  return banner + brand;
+}
+
+VIEWS.pdash = () => {
+  const c=client(); const vends=VENDORS.filter(v=>v.clientId===c.id);
+  const open=ASSESSMENTS.filter(a=>a.clientId===c.id&&a.stage<9);
+  const ev=EVIDENCE.filter(e=>e.client===c.id&&e.status!=="Current");
+  return `${portalHeader()}
+  ${state.role==="cviewer"?'<div class="notice">You are viewing as <b>Client Viewer</b> — read-only. Vendor management, assessment requests and user admin are hidden.</div>':""}
+  <div class="grid g4 mb">
+    <div class="card kpi"><div class="v">${vends.length}</div><div class="l">Vendors in portfolio</div></div>
+    <div class="card kpi"><div class="v" style="color:var(--crit)">${vends.filter(v=>v.rating==="Critical"||v.rating==="High").length}</div><div class="l">Critical / High risk</div></div>
+    <div class="card kpi"><div class="v" style="color:${open.some(a=>a.overdue)?"var(--high)":"var(--txt)"}">${open.length}</div><div class="l">Assessments in progress</div><div class="d mut">${open.filter(a=>a.overdue).length} overdue</div></div>
+    <div class="card kpi"><div class="v" style="color:var(--high)">${ev.length}</div><div class="l">Evidence alerts</div></div>
+  </div>
+  <div class="grid g2 mb">
+    ${entitlementCard(c)}
+    <div class="card"><h3>Risk Trend — Your Portfolio</h3>${trendChart([{l:"Feb",v:68},{l:"Mar",v:70},{l:"Apr",v:74},{l:"May",v:72},{l:"Jun",v:70},{l:"Jul",v:73}])}</div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>Vendor Risk Heatmap</h3>${heatmap(vends)}</div>
+    <div class="card"><h3>Needs Your Attention</h3>
+      ${open.map(a=>{const v=vendor(a.vendorId);return `<div class="msg"><div class="row" style="justify-content:space-between"><b>${v.name}</b>${stageBadge(a)}</div><div class="xs mut" style="margin-top:3px">${a.cycle} · due ${a.due}</div></div>`;}).join("")||'<div class="mut sm">Nothing outstanding.</div>'}
+      ${ev.map(e=>`<div class="msg"><div class="row" style="justify-content:space-between"><b>${e.vendor}</b><span class="b ${e.status==="Expired"?"crit":"high"}">${e.status}</span></div><div class="xs mut" style="margin-top:3px">📄 ${e.doc} · expires ${e.expires}</div></div>`).join("")}
+    </div>
+  </div>`;
+};
+
+VIEWS.pvendors = () => {
+  const c=client(); const vends=VENDORS.filter(v=>v.clientId===c.id);
+  return `${portalHeader()}
+  <div class="hd"><div><h2>My Vendors</h2><div class="sub">${vends.length} vendors · data isolated to ${c.name} only</div></div>
+  ${state.role==="cadmin"?`<div class="row"><button class="btn" onclick="newAssessmentModal()">Request Assessment</button><button class="btn pri" onclick="addVendorModal('${c.id}')">+ Add Vendor</button></div>`:""}</div>
+  <div class="card">${vendorTable(vends,false)}</div>`;
+};
+
+VIEWS.passess = () => {
+  const c=client(); const list=ASSESSMENTS.filter(a=>a.clientId===c.id);
+  return `${portalHeader()}
+  <div class="hd"><div><h2>Assessments</h2><div class="sub">In-progress and completed assessments for your vendors</div></div>
+  ${state.role==="cadmin"?`<button class="btn pri" onclick="newAssessmentModal()">Request New Assessment</button>`:""}</div>
+  <div class="card"><table><thead><tr><th>Vendor</th><th>Type</th><th>Cycle</th><th>Questionnaire</th><th>Status</th><th>Due / Completed</th><th>Result</th></tr></thead><tbody>
+  ${list.map(a=>{const v=vendor(a.vendorId);return `<tr onclick="openAssessment('${a.id}')"><td><b>${v.name}</b></td><td>${typeBadge(a.type)}</td><td class="sm">${a.cycle}</td><td class="sm">${a.questionnaire}</td><td>${stageBadge(a)}</td><td class="sm">${a.completed||a.due}</td><td>${a.score!=null?`<b style="color:${scoreColor(a.score)}">${a.score}</b> ${rb(ratingOf(a.score))}`:"—"}</td></tr>`;}).join("")}
+  </tbody></table></div>`;
+};
+
+VIEWS.preports = () => `${portalHeader()}<div class="hd"><div><h2>Reports</h2><div class="sub">Download in any format, or schedule automated delivery to your stakeholders</div></div></div>${reportsBody(client())}`;
+
+VIEWS.pmsg = () => `${portalHeader()}
+  <div class="hd"><div><h2>Messages</h2><div class="sub">In-platform communication with your Netrio Cyber Governance team</div></div></div>
+  <div class="card" style="max-width:720px">
+    ${MESSAGES.map(m=>`<div class="msg ${m.mine?"mine":""}"><div class="mh">${m.from} · ${m.ts}</div>${esc(m.text)}</div>`).join("")}
+    <div class="row mt"><input id="msgIn" placeholder="Write a message to your Netrio team…" style="flex:1"><button class="btn pri" onclick="sendMsg()">Send</button></div>
+  </div>`;
+function sendMsg(){ const t=$("msgIn").value.trim(); if(!t) return; MESSAGES.push({from:roleName()+" ("+client().short+")", mine:state.role==="cadmin"||state.role==="cviewer", ts:"Jul 4", text:t}); log("Portal message sent to Netrio team"); render(); toast("Message sent — your Netrio analyst is notified"); }
+
+VIEWS.psettings = () => {
+  const c=client();
+  return `${portalHeader()}
+  <div class="hd"><div><h2>Settings & Users</h2><div class="sub">Client Admin — manage your organization's portal users and preferences</div></div></div>
+  <div class="grid g2 mb">
+    <div class="card"><h3>Portal Users (your organization only)</h3><table><thead><tr><th>User</th><th>Role</th><th>MFA</th><th></th></tr></thead><tbody>
+      ${[["cadmin@"+c.short.toLowerCase()+".com","Client Admin"],["j.rivera@"+c.short.toLowerCase()+".com","Client Viewer"],["m.osei@"+c.short.toLowerCase()+".com","Client Viewer"]].map(u=>`<tr class="nolink"><td class="sm">${u[0]}</td><td><span class="b ${u[1]==="Client Admin"?"teal":"gray"}">${u[1]}</span></td><td><span class="b low">On</span></td><td><button class="btn sm" onclick="toast('User management (mock)')">Edit</button></td></tr>`).join("")}
+      </tbody></table>
+      <button class="btn sm mt" style="margin-top:10px" onclick="toast('Invite sent (mock) — Azure AD SSO or email/password fallback')">+ Invite user</button></div>
+    <div class="card"><h3>Upload Your Own Questionnaire</h3>
+      <div class="sm mut mb">Prefer your own questionnaire over the Netrio SIG? Upload Excel, PDF, or form-based questionnaires for use in assessments (PRD §4.2).</div>
+      <div class="ev" style="padding:22px;justify-content:center;cursor:pointer" onclick="uploadQ()">⬆ Click to upload questionnaire (xlsx, pdf, docx)</div>
+      <div class="mt" style="margin-top:12px"><b class="sm">Uploaded:</b><div class="msg" style="margin-top:6px"><div class="row" style="justify-content:space-between">📄 ${c.id==="c3"?"BSL-VendorSec-v3.xlsx":"(none yet)"}${c.id==="c3"?'<span class="b teal">In use — RouteWise TMS assessment</span>':""}</div></div></div>
+      <div class="xs mut mt">Native Netrio SIG questions support conditional branching — a follow-up question can appear only when a prior answer meets a condition (see the Supply Chain Risk Management domain in a live SIG assessment for an example). For client-uploaded Excel/PDF questionnaires, only question text and structure are used — Excel-native conditional formatting (cell colors, data validation rules) is cosmetic and is not interpreted by the platform. Mapping uploaded questions into structured, branching logic is an open item for technical design.</div></div>
+  </div>
+  <div class="card"><h3>Notification Preferences</h3>
+    <div class="sm mut mb">Current mode: <span class="b teal">${ {"netrio-managed":"Netrio-managed — your analyst handles all communication","client-direct":"Client-direct — you receive automated notifications","hybrid":"Hybrid — both you and Netrio receive notifications"}[c.notif] }</span></div>
+    <div class="xs mut">Contact your Netrio admin to change the notification model, or adjust per-event settings above in a full build.</div></div>`;
+};
+function uploadQ(){ toast("Questionnaire uploaded (mock) — parsing approach is PRD Open Item #2"); log("Client uploaded custom questionnaire via portal"); }
+
+/* ============================================================
+   VENDOR CONTACT VIEWS
+   ============================================================ */
+VIEWS.vq = () => {
+  const visible=QUESTIONS.filter(shouldShow);
+  const answered=visible.filter(q=>q.answer).length;
+  return `
+  <div class="brandbar" style="background:var(--navy)"><div class="wl-logo">N</div><div><b>Netrio Secure Questionnaire</b> — MedCloud Systems<div class="xs" style="opacity:.8">On behalf of Lone Star Health Partners · SIG 2026.1 · secure link expires in 6 days</div></div></div>
+  <div class="notice">You only see the questionnaire assigned to you. No visibility into other vendors, assessments, or client data (PRD §7.3). Progress saves automatically. Some questions only appear based on how you answer an earlier question — try changing the Supply Chain Risk Management answer below.</div>
+  <div class="card mb"><div class="row" style="justify-content:space-between"><b>Progress: ${answered} of ${visible.length} applicable questions answered</b><span class="b ${answered===visible.length?"low":"info"}">${Math.round(answered/visible.length*100)}%</span></div>
+  <div class="bar mt" style="margin-top:8px"><i style="width:${answered/visible.length*100}%;background:var(--brand)"></i></div></div>
+  ${visible.map((q,i)=>`
+  <div class="q">
+    <div class="qd">${q.showIf?"Follow-up question · ":`Question ${i+1} · `}${q.domain}</div>
+    <div class="qt">${q.text}</div>
+    <div class="opts">${["Yes","Partial","No","N/A"].map(o=>`<label><input type="radio" name="vq_${q.id}" ${q.answer===o?"checked":""} onchange="setAnswer('${q.id}','${o}')">${o}</label>`).join("")}</div>
+    ${q.review==="rejected"||q.review==="flagged"?`<div class="xs" style="margin-top:8px;color:var(--crit)"><b>Netrio reviewer requested clarification:</b> ${esc(q.note)}</div>`:""}
+    <div class="ev">${q.evidence?`📎 ${q.evidence.name} <span class="xs mut">· uploaded, expires ${q.evidence.expires}</span> <button class="btn sm" onclick="toast('Replaced (mock)')">Replace</button>`:`<button class="btn sm" onclick="attachEvidence('${q.id}')">⬆ Attach supporting evidence</button> <span class="xs mut">Documents, screenshots, or files per question</span>`}</div>
+  </div>`).join("")}
+  <div class="card"><div class="row" style="justify-content:space-between"><div class="sm mut">Submitting notifies the assigned Netrio analyst and your client contact.</div><button class="btn pri" onclick="toast('Questionnaire submitted — Netrio review begins (stage 5)');log('MedCloud Systems submitted questionnaire responses')">Submit Questionnaire</button></div></div>`;
+};
+function setAnswer(id,val){ const q=QUESTIONS.find(x=>x.id===id); q.answer=val; q.review="pending"; render(); }
+function attachEvidence(id){ const q=QUESTIONS.find(x=>x.id===id); q.evidence={name:"evidence_upload.pdf",expires:"2027-07-04"}; render(); toast("Evidence attached to this question"); }
+
+VIEWS.vev = () => `
+  <div class="brandbar" style="background:var(--navy)"><div class="wl-logo">N</div><div><b>My Evidence Library</b> — MedCloud Systems<div class="xs" style="opacity:.8">Accepted evidence is stored on your record and may be referenced in future assessments</div></div></div>
+  <div class="card"><table><thead><tr><th>Document</th><th>Linked question</th><th>Expires</th><th>Status</th></tr></thead><tbody>
+  ${QUESTIONS.filter(shouldShow).filter(q=>q.evidence).map(q=>`<tr class="nolink"><td class="sm">📄 ${q.evidence.name}</td><td class="sm mut">${q.domain}</td><td class="sm">${q.evidence.expires}</td>
+    <td><span class="b ${q.evidence.expires<"2026-07-04"?"crit":q.evidence.expires<"2026-08-04"?"high":"low"}">${q.evidence.expires<"2026-07-04"?"Expired — replace required":q.evidence.expires<"2026-08-04"?"Expiring soon":"Current"}</span></td></tr>`).join("")}
+  </tbody></table>
+  <div class="xs mut mt">You'll receive automated reminders when evidence approaches expiration.</div></div>`;
+
+/* ---------- init ---------- */
+setRole("nadmin");
+</script>
+</body>
+</html>
